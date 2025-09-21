@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Catálogo de Autos de Lujo</title>
+  <style>
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+    nav {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    nav a {
+      color: white;
+      margin: 0 15px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    nav a:hover {
+      color: #cda434;
+    }
+
+    .catalogo {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 25px;
+      padding: 25px;
+    }
+
+    .auto {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+    
+    .auto:hover {
+        transform: translateY(-5px);
+    }
+
+    .carousel {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      overflow: hidden;
+    }
+
+    .carousel img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: none; /* Ocultas por defecto */
+    }
+
+    .carousel img.active {
+      display: block; /* Solo la activa es visible */
+    }
+    
+    .contenido {
+      text-align: center;
+      padding: 15px;
+    }
+
+    .contenido h2 {
+      margin: 10px 0;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 5px;
+      background: #333;
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #cda434;
+      color: #111;
+    }
+
+    .especificaciones {
+      background: #f9f9f9;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-top: 1px solid #ddd;
+      text-align: left;
+    }
+    
+    #contacto-seccion {
+        background: #111;
+        color: white;
+        text-align: center;
+        padding: 40px 20px;
+    }
+    #contacto-seccion h2 {
+        color: #cda434;
+    }
+    #contacto-seccion p {
+        margin: 5px 0;
+        font-size: 1.1em;
+    }
+
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="#contacto-seccion">Contacto</a>
+  </nav>
+
+  <div class="catalogo">
+
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://hips.hearstapps.com/hmg-prod/images/04-bugatti-chiron-profilee-1671631535.jpg" class="active" alt="Bugatti 1">
+        <img src="https://www.xtrafondos.com/wallpapers/bugatti-chiron-cgi-7643.jpg" alt="Bugatti 2">
+        <img src="https://i.pinimg.com/1200x/55/c7/db/55c7dbe5f575f0eaabcab0b6adc9dc40.jpg" alt="Bugatti 3">
+      </div>
+      <div class="contenido">
+        <h2>Bugatti Chiron</h2>
+        <button class="btn" onclick="alert('Precio estimado: $88,000,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> W16 Quad-Turbo 8.0L</p>
+        <p><b>Potencia:</b> 1500 HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://www.xtrafondos.com/thumbs/1_6368.jpg" class="active" alt="Mustang 1">
+        <img src="https://4kwallpapers.com/images/wallpapers/ford-mustang-gt-5k-3840x2160-9774.jpg" alt="Mustang 2">
+        <img src="https://www.xtrafondos.com/thumbs/1_2429.jpg" alt="Mustang 3">
+      </div>
+      <div class="contenido">
+        <h2>Ford Mustang GT</h2>
+        <button class="btn" onclick="alert('Precio estimado: 1,299,900 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> V8 5.0L</p>
+        <p><b>Potencia:</b> 450 HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://www.xtrafondos.com/wallpapers/ferrari-296-gtb-2022-rojo-11303.jpg" class="active" alt="Ferrari 1">
+        <img src="https://www.amalgamcollection.com/cdn/shop/articles/DSCF9346-1_1024x1024.jpg?v=1644235872" alt="Ferrari 2">
+        <img src="https://mir-s3-cdn-cf.behance.net/project_modules/1400/8f6d1f127955491.614c5217bd76e.jpg" alt="Ferrari 3">
+      </div>
+      <div class="contenido">
+        <h2>Ferrari 296 GTB</h2>
+        <button class="btn" onclick="alert('Precio estimado: $6,000,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> V6 Híbrido 3.0L</p>
+        <p><b>Potencia:</b> 819 HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://uploads.audi-mediacenter.com/system/production/media/116357/images/9eb8a671f57e6f471d5208cd6d433d21ff75eb19/A231647_web_2880.jpg?1698530465" class="active" alt="Lamborghini 1">
+        <img src="https://i.redd.it/lamborghini-revuelto-4480-2520-v0-hyu669x75kwa1.jpg?width=4480&format=pjpg&auto=webp&s=8aed3462edad9fe72279c3c6c04e949cbf9e9f5e" alt="Lamborghini 2">
+        <img src="https://images3.alphacoders.com/130/thumb-350-1308567.webp" alt="Lamborghini 3">
+      </div>
+      <div class="contenido">
+        <h2>Lamborghini Revuelto</h2>
+        <button class="btn" onclick="alert('Precio estimado: $18,000,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> V12 Híbrido 6.5L</p>
+        <p><b>Potencia:</b> 1001 HP</p>
+      </div>
+    </div>
+
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://car-images.bauersecure.com/wp-images/4631/rr_spectre_040.jpg" class="active" alt="Rolls-Royce 1">
+        <img src="https://rikauto.com.ua/images/detailed/781/2_76bq-79.png" alt="Rolls-Royce 2">
+        <img src="https://carmania.mx/wp-content/uploads/2022/10/3_SPECTREUNVEILED%E2%80%93THEFIRSTFULLY-ELECTRICROLLS-ROYCE_PROFILE.jpeg" alt="Rolls-Royce 3">
+      </div>
+      <div class="contenido">
+        <h2>Rolls-Royce Spectre</h2>
+        <button class="btn" onclick="alert('Precio estimado: $12,000,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> Eléctrico Dual</p>
+        <p><b>Potencia:</b> 577 HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://4kwallpapers.com/images/wallpapers/mclaren-artura-5120x2880-22444.jpg" class="active" alt="McLaren 1">
+        <img src="https://mclaren.scene7.com/is/image/mclaren/MCLAREN_ARTURA_SPIDER_HERO_REAR_34_HIGH:crop-16x9?wid=1600&hei=900" alt="McLaren 2">
+        <img src="https://cars.mclaren.press/assets/images/hero/15907-McLarenArturaSpider6.jpg" alt="McLaren 3">
+      </div>
+      <div class="contenido">
+        <h2>McLaren Artura Spider</h2>
+        <button class="btn" onclick="alert('Precio estimado: $8,000,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> V6 Híbrido 3.0L</p>
+        <p><b>Potencia:</b> 671 HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://4kwallpapers.com/images/wallpapers/porsche-911-gt3-rs-3840x2160-12365.jpg" class="active" alt="Porsche 1">
+        <img src="https://www.xtrafondos.com/wallpapers/porsche-911-gt3-rs-13078.jpg" alt="Porsche 2">
+        <img src="https://mir-s3-cdn-cf.behance.net/projects/404/c9782b187249241.Y3JvcCwxODQxLDE0NDAsMzYwLDA.jpg" alt="Porsche 3">
+      </div>
+      <div class="contenido">
+        <h2>Porsche 911 GT3 RS</h2>
+        <button class="btn" onclick="alert('Precio estimado: $4,778,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> Boxer 6 4.0L</p>
+        <p><b>Potencia:</b> 518 HP</p>
+      </div>
+    </div>
+
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://i.pinimg.com/736x/2b/0b/45/2b0b45be35e35f3c1156b5f2587816dc.jpg" class="active" alt="Aston Martin 1">
+        <img src="https://www.hdcarwallpapers.com/download/aston_martin_db12_2023_4k_3-2560x1440.jpg" alt="Aston Martin 2">
+        <img src="https://4kwallpapers.com/images/wallpapers/aston-martin-db12-5120x2880-13717.jpg" alt="Aston Martin 3">
+      </div>
+      <div class="contenido">
+        <h2>Aston Martin DB12</h2>
+        <button class="btn" onclick="alert('Precio estimado: $7,000,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> V8 Bi-Turbo 4.0L</p>
+        <p><b>Potencia:</b> 671 HP</p>
+      </div>
+    </div>
+
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://www.wsupercars.com/thumbnails-wide/Maserati/2023-Maserati-MC20-Notte-Edition-001.jpg" class="active" alt="Maserati 1">
+        <img src="https://www.xtrafondos.com/wallpapers/maserati-mc20-coup-por-atras-10472.jpg" alt="Maserati 2">
+        <img src="https://wallpaperswide.com/download/maserati_mc20_car-wallpaper-5120x2880.jpg" alt="Maserati 3">
+      </div>
+      <div class="contenido">
+        <h2>Maserati MC20</h2>
+        <button class="btn" onclick="alert('Precio estimado: $7,000,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b> V6 Bi-Turbo 3.0L</p>
+        <p><b>Potencia:</b> 621 HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://cms-assets.autoscout24.com/uaddx06iwzdz/34l4tYTWWCwOzrWatHWGxX/d6ce6798ee3af775bd9b94787820185d/YANGWANG-U9_11_.jpg?w=1100&fit=fill" class="active" alt="Yangwang 1">
+        <img src="https://www.autonocion.com/wp-content/uploads/2023/04/YangWang-U9-7.jpg" alt="Yangwang 2">
+        <img src="https://acnews.blob.core.windows.net/imgnews/medium/NAZ_70154b7d1acc49fa8eb76654d0d70a3c.webp" alt="Yangwang 3">
+      </div>
+      <div class="contenido">
+        <h2>Yangwang U9</h2>
+        <button class="btn" onclick="alert('Precio estimado: $4,600,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b>  Cuatro motores eléctricos</p>  
+        <p><b>Potencia:</b> 1,287 HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+
+    <div class="auto">
+      <div class="carousel">
+        <img src="https://www.amalgamcollection.com/cdn/shop/products/DSCF9860WIDEEDIT_898c7812-8e8e-4f1e-92a3-340645220b08_2000x850_crop_center.jpg?v=1625842642" class="active" alt="Ford 1">
+        <img src="https://i.pinimg.com/736x/1b/30/29/1b3029b30b0310526936ba3b04a1abf1.jpg" alt="Ford 2">
+        <img src="https://external-preview.redd.it/BA7ZK4-3KEn8vmwdWkZUs2J3fAuWaW2K5uw521t6pdc.jpg?auto=webp&s=fcd03280deaa2b8d124fe7cee30f19d2d1b985d8" alt="Ford 3">
+      </div>
+      <div class="contenido">
+        <h2> Ford GT40</h2>
+        <button class="btn" onclick="alert('Precio estimado: $226,000,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b>  V8</p>  
+        <p><b>Potencia:</b> 400  HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+
+ <div class="auto">
+      <div class="carousel">
+        <img src="https://cms-assets.autoscout24.com/uaddx06iwzdz/34l4tYTWWCwOzrWatHWGxX/d6ce6798ee3af775bd9b94787820185d/YANGWANG-U9_11_.jpg?w=1100&fit=fill" class="active" alt="Pagani 1">
+        <img src="https://www.autonocion.com/wp-content/uploads/2023/04/YangWang-U9-7.jpg" alt="Pagani 2">
+        <img src="https://acnews.blob.core.windows.net/imgnews/medium/NAZ_70154b7d1acc49fa8eb76654d0d70a3c.webp" alt="Pagani 3">
+      </div>
+      <div class="contenido">
+        <h2>Yangwang U9</h2>
+        <button class="btn" onclick="alert('Precio estimado: $4,600,000 MXN')">Más información</button>
+      </div>
+      <div class="especificaciones">
+        <p><b>Motor:</b>  Cuatro motores eléctricos</p>  
+        <p><b>Potencia:</b> 1,287 HP</p>
+      </div>
+    </div>
+    
+<!---------------------------------------------------------------------------------------------->
+  </div>
+
+  <footer id="contacto-seccion">
+      <h2>Contáctanos</h2>
+      <p>Av. de los AUTOS DEPORTIVOS🤑 123, Colonia Lujo, Ciudad Capital</p>
+      <p><strong>Teléfono:</strong> +52 55 1122 3344</p>
+      <p><strong>Email:</strong> <a href="mailto:ventas@autosexclusivos.com" style="color: white;">ventas@autosexclusivos.com</a></p>
+  </footer>
+
+  <script>
+    document.querySelectorAll(".carousel").forEach(carrusel => {
+      let index = 0;
+      const images = carrusel.querySelectorAll("img");
+
+      function mostrarCarrusel() {
+        images.forEach(img => img.classList.remove("active"));
+        images[index].classList.add("active");
+        index = (index + 1) % images.length;
+      }
+
+      setInterval(mostrarCarrusel, 1500); // Cambia de imagen cada 3 segundos
+    });
+  </script>
+</body>
+</html>
