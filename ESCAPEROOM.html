@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Room: El Búnker Interactivo</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            background-color: #1a1a1a;
+            color: #a2fca2; /* Verde fósforo */
+            font-family: 'Roboto Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 80vh;
+            background-color: rgba(0, 0, 0, 0.85);
+            border: 2px solid #3c3c3c;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #background-image-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://www.nintendo.com/eu/media/images/06_screenshots/games_5/nintendo_switch_download_software_2/nswitchds_veredaescaperoomadventure/NSwitchDS_VeredaEscapeRoomAdventure_05.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+        }
+
+        h1 {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #50fa7b;
+            text-shadow: 0 0 5px #0f0;
+            z-index: 10;
+            background-color: rgba(0,0,0,0.7);
+            padding: 5px 15px;
+            border-radius: 5px;
+            border: 1px solid #50fa7b;
+        }
+
+        .hotspot-button {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(80, 250, 123, 0.5);
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 5;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .hotspot-button:hover {
+            background-color: rgba(80, 250, 123, 0.3);
+            border-color: #50fa7b;
+        }
+        .hotspot-button:disabled {
+            cursor: not-allowed;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: rgba(80, 250, 123, 0.2);
+        }
+
+        #hotspot-q0 { top: 75%; left: 15%; width: 20%; height: 15%; }
+        #hotspot-q1 { top: 25%; left: 30%; width: 10%; height: 20%; }
+        #hotspot-q2 { top: 60%; left: 45%; width: 15%; height: 20%; }
+        #hotspot-q3 { top: 30%; left: 55%; width: 10%; height: 25%; }
+        #hotspot-q4 { top: 35%; left: 80%; width: 15%; height: 30%; }
+
+        #puzzle-overlay {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background-color: rgba(0, 0, 0, 0.95);
+            border: 2px solid #50fa7b;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+            z-index: 100;
+            text-align: center;
+        }
+        #puzzle-overlay h2 {
+            color: #50fa7b;
+            margin-top: 0;
+            border-bottom: 1px solid #50fa7b;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        #puzzle-overlay p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        #puzzle-overlay .klotski-image-container {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            height: 220px; /* Altura fija para evitar saltos */
+            position: relative;
+        }
+        #puzzle-overlay .klotski-image-container img {
+            max-width: 100%;
+            max-height: 200px;
+            height: auto;
+            border: 1px solid #555;
+        }
+
+        #puzzle-overlay .puzzle-controls {
+            margin-top: 20px;
+        }
+        #puzzle-overlay input[type="text"] {
+            width: 60%;
+            padding: 10px;
+            background-color: #282a36;
+            border: 1px solid #6272a4;
+            color: #f8f8f2;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1em;
+            border-radius: 4px;
+        }
+        #puzzle-overlay button {
+            padding: 10px 20px;
+            background-color: #50fa7b;
+            color: #282a36;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1em;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        #puzzle-overlay button:hover {
+            background-color: #a2fca2;
+        }
+        #puzzle-overlay #close-puzzle-button {
+            background-color: #ff5555;
+            color: white;
+            margin-top: 15px;
+        }
+        #puzzle-overlay #close-puzzle-button:hover {
+            background-color: #ff7777;
+        }
+        #puzzle-overlay #puzzle-feedback {
+            margin-top: 10px;
+            font-weight: bold;
+            min-height: 20px;
+        }
+
+        #global-message-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2em;
+            color: #50fa7b;
+            border-top: 1px solid #50fa7b;
+            box-sizing: border-box;
+            z-index: 50;
+            display: none;
+        }
+        #global-message-area.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-wrapper">
+        <div id="background-image-container">
+            <button class="hotspot-button" id="hotspot-q0"></button>
+            <button class="hotspot-button" id="hotspot-q1"></button>
+            <button class="hotspot-button" id="hotspot-q2"></button>
+            <button class="hotspot-button" id="hotspot-q3"></button>
+            <button class="hotspot-button" id="hotspot-q4"></button>
+        </div>
+
+        <h1>El Escape Interactivo</h1>
+
+        <div id="puzzle-overlay">
+            <h2 id="overlay-puzzle-title"></h2>
+            <p id="overlay-puzzle-text"></p>
+            
+            <div id="overlay-klotski-display" style="display:none;">
+                <div class="klotski-image-container">
+                    <img id="klotski-unsolved-img" src="https://i.imgur.com/5J3L3f3.png" alt="Klotski Puzzle sin resolver">
+                    <img id="klotski-solved-img" src="https://i.stack.imgur.com/b624w.png" alt="Klotski Puzzle resuelto" style="display: none;">
+                </div>
+            </div>
+
+            <div class="puzzle-controls">
+                <input type="text" id="overlay-user-input" placeholder="Tu respuesta...">
+                <button id="overlay-submit-button">Resolver</button>
+            </div>
+            <p id="overlay-puzzle-feedback"></p>
+            <button id="close-puzzle-button">Cerrar</button>
+        </div>
+
+        <div id="global-message-area"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const puzzleOverlay = document.getElementById('puzzle-overlay');
+            const overlayPuzzleTitle = document.getElementById('overlay-puzzle-title');
+            const overlayPuzzleText = document.getElementById('overlay-puzzle-text');
+            const overlayKlotskiDisplay = document.getElementById('overlay-klotski-display');
+            const klotskiUnsolvedImg = document.getElementById('klotski-unsolved-img');
+            const klotskiSolvedImg = document.getElementById('klotski-solved-img');
+            const overlayUserInput = document.getElementById('overlay-user-input');
+            const overlaySubmitButton = document.getElementById('overlay-submit-button');
+            const overlayPuzzleFeedback = document.getElementById('overlay-puzzle-feedback');
+            const closePuzzleButton = document.getElementById('close-puzzle-button');
+            const globalMessageArea = document.getElementById('global-message-area');
+            const allHotspots = document.querySelectorAll('.hotspot-button');
+
+            const gameDFA = {
+                currentState: 'q0',
+                transitions: {
+                    'q0': { '4': 'q1' },
+                    'q1': { '15': 'q2' },
+                    'q2': { '7': 'q3' },
+                    'q3': { 'GPGTIKC': 'q4' },
+                    'q4': { 'resuelto': 'q5' },
+                    'q5': { '5310': 'q6' }
+                },
+                finalState: 'q6'
+            };
+
+            const puzzleContent = {
+                'q0': {
+                    title: "Puzle 1: Observación",
+                    text: "¿Cuántas sillas ves en total?",
+                    hotspotId: 'hotspot-q0'
+                },
+                'q1': {
+                    title: "Puzle 2: Secuencia Numérica",
+                    text: "En la pizarra hay una secuencia numérica incompleta: 1, 3, 6, 10, ? ¿Cuál es el siguiente número?",
+                    hotspotId: 'hotspot-q1'
+                },
+                'q2': {
+                    title: "Puzle 3: Geografía",
+                    text: "Hay un globo terráqueo en una caja. ¿Cuántos continentes son?",
+                    hotspotId: 'hotspot-q2'
+                },
+                'q3': {
+                    title: "Puzle 4: Criptografía",
+                    text: "Una radio emite un mensaje: 'Clave de cifrado +2. Si LUZ es NYB, ¿cuál es la palabra clave para la caja de fusibles que dice ENERGIA?' (La respuesta debe ser en mayúsculas).",
+                    hotspotId: 'hotspot-q3'
+                },
+                'q4': {
+                    title: "Puzle 5: El Klotski",
+                    text: "La cerradura de la puerta es un complejo mecanismo de bloques. Resuélvelo para obtener la clave final. Escribe 'resuelto' cuando lo hayas imaginado.",
+                    isKlotski: true,
+                    hotspotId: 'hotspot-q4'
+                },
+                'q5': {
+                    title: "Puzle Final: Código de Escape",
+                    text: "Al resolver el Klotski, se revela un código: 5310. ¡Introdúcelo para escapar!",
+                    hotspotId: 'hotspot-q4'
+                },
+                'q6': {
+                    title: "¡HAS ESCAPADO!",
+                    text: "🎉 ¡Felicidades! La puerta se abre. ¡Has escapado! 🎉"
+                }
+            };
+
+            function updateHotspots() {
+                allHotspots.forEach(hotspot => {
+                    hotspot.disabled = true;
+                    hotspot.style.opacity = '0.2';
+                    hotspot.style.cursor = 'not-allowed';
+                });
+
+                if (gameDFA.currentState in puzzleContent) {
+                    const activeHotspotId = puzzleContent[gameDFA.currentState].hotspotId;
+                    const activeHotspot = document.getElementById(activeHotspotId);
+                    if (activeHotspot) {
+                        activeHotspot.disabled = false;
+                        activeHotspot.style.opacity = '1';
+                        activeHotspot.style.cursor = 'pointer';
+                    }
+                }
+            }
+
+            function showPuzzleOverlay() {
+                const content = puzzleContent[gameDFA.currentState];
+                if (!content) return;
+
+                overlayPuzzleTitle.innerText = content.title;
+                overlayPuzzleText.innerText = content.text;
+                overlayUserInput.value = '';
+                overlayPuzzleFeedback.innerText = '';
+                
+                if (content.isKlotski) {
+                    overlayKlotskiDisplay.style.display = 'block';
+                    klotskiUnsolvedImg.style.display = 'block'; // Muestra la imagen sin resolver
+                    klotskiSolvedImg.style.display = 'none';    // Oculta la imagen resuelta
+                } else {
+                    overlayKlotskiDisplay.style.display = 'none';
+                }
+                
+                puzzleOverlay.style.display = 'block';
+                overlayUserInput.focus();
+            }
+
+            function hidePuzzleOverlay() {
+                puzzleOverlay.style.display = 'none';
+            }
+
+            function processInput() {
+                const answer = overlayUserInput.value.trim();
+                const normalizedAnswer = /^[a-zA-Z]+$/.test(answer) ? answer.toUpperCase() : answer;
+                const possibleTransitions = gameDFA.transitions[gameDFA.currentState];
+
+                if (possibleTransitions && possibleTransitions[normalizedAnswer]) {
+                    // Si la respuesta es correcta, primero da feedback visual si es el Klotski
+                    if (gameDFA.currentState === 'q4' && normalizedAnswer === 'resuelto') {
+                        klotskiUnsolvedImg.style.display = 'none';
+                        klotskiSolvedImg.style.display = 'block';
+                    }
+
+                    // Avanza al siguiente estado
+                    gameDFA.currentState = possibleTransitions[normalizedAnswer];
+                    overlayPuzzleFeedback.innerText = ">> ¡Correcto! Se ha desbloqueado algo nuevo. <<";
+                    overlayPuzzleFeedback.style.color = '#50fa7b';
+
+                    // Espera un momento para que el jugador vea el feedback y luego cierra/actualiza
+                    setTimeout(() => {
+                        hidePuzzleOverlay();
+                        updateGameStatus();
+                    }, 1500); // Un poco más de tiempo para ver la imagen resuelta
+
+                } else {
+                    overlayPuzzleFeedback.innerText = ">> No parece ser la respuesta correcta. Intenta de nuevo. <<";
+                    overlayPuzzleFeedback.style.color = '#ff5555';
+                }
+                overlayUserInput.value = '';
+            }
+
+            function updateGameStatus() {
+                updateHotspots();
+
+                if (gameDFA.currentState === gameDFA.finalState) {
+                    globalMessageArea.innerHTML = puzzleContent[gameDFA.finalState].text;
+                    globalMessageArea.classList.add('active');
+                    allHotspots.forEach(hotspot => hotspot.disabled = true);
+                }
+            }
+
+            allHotspots.forEach(hotspot => {
+                hotspot.addEventListener('click', () => {
+                    if (hotspot.disabled) return;
+                    showPuzzleOverlay();
+                });
+            });
+
+            closePuzzleButton.addEventListener('click', hidePuzzleOverlay);
+            overlaySubmitButton.addEventListener('click', processInput);
+            overlayUserInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    processInput();
+                }
+            });
+
+            updateGameStatus();
+            globalMessageArea.innerText = "Busca pistas en la habitación para escapar.";
+            globalMessageArea.classList.add('active');
+            setTimeout(() => globalMessageArea.classList.remove('active'), 3000);
+        });
+    </script>
+</body>
+</html>
