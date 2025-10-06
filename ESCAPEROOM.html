@@ -30,9 +30,6 @@
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
         }
 
         #background-image-container {
@@ -70,16 +67,8 @@
             z-index: 5;
             transition: background-color 0.2s, border-color 0.2s;
         }
-
-        .hotspot-button:hover {
-            background-color: rgba(80, 250, 123, 0.3);
-            border-color: #50fa7b;
-        }
-        .hotspot-button:disabled {
-            cursor: not-allowed;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-color: rgba(80, 250, 123, 0.2);
-        }
+        .hotspot-button:hover { background-color: rgba(80, 250, 123, 0.3); border-color: #50fa7b; }
+        .hotspot-button:disabled { cursor: not-allowed; background-color: rgba(255, 255, 255, 0.05); border-color: rgba(80, 250, 123, 0.2); }
 
         #hotspot-q0 { top: 75%; left: 15%; width: 20%; height: 15%; }
         #hotspot-q1 { top: 25%; left: 30%; width: 10%; height: 20%; }
@@ -87,37 +76,50 @@
         #hotspot-q3 { top: 30%; left: 55%; width: 10%; height: 25%; }
         #hotspot-q4 { top: 35%; left: 80%; width: 15%; height: 30%; }
 
-        #puzzle-overlay {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 650px;
-            background-color: rgba(0, 0, 0, 0.95);
-            border: 2px solid #50fa7b;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
-            z-index: 100;
-            text-align: center;
-        }
+        #puzzle-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 650px; background-color: rgba(0, 0, 0, 0.95); border: 2px solid #50fa7b; border-radius: 10px; padding: 25px; box-shadow: 0 0 30px rgba(0, 255, 0, 0.4); z-index: 100; text-align: center; }
         #puzzle-overlay h2 { color: #50fa7b; margin-top: 0; border-bottom: 1px solid #50fa7b; padding-bottom: 10px; margin-bottom: 20px; }
         #puzzle-overlay p { font-size: 1.1em; line-height: 1.6; margin-bottom: 20px; }
         
         #standard-puzzle-controls input[type="text"] { width: 60%; padding: 10px; background-color: #282a36; border: 1px solid #6272a4; color: #f8f8f2; font-family: 'Roboto Mono', monospace; font-size: 1em; border-radius: 4px; }
         #standard-puzzle-controls button { padding: 10px 20px; background-color: #50fa7b; color: #282a36; border: none; font-weight: bold; cursor: pointer; font-family: 'Roboto Mono', monospace; font-size: 1em; border-radius: 4px; margin-left: 10px; }
         
-        #klotski-display { display: none; }
-        .klotski-image-container { background-color: #333; padding: 10px; border-radius: 5px; display: inline-block; height: 220px; position: relative; }
-        .klotski-image-container img { max-width: 100%; max-height: 200px; height: auto; border: 1px solid #555; }
-
         #close-puzzle-button { background-color: #ff5555; color: white; margin-top: 15px; }
         #puzzle-feedback { margin-top: 10px; font-weight: bold; min-height: 20px; }
         
         #global-message-area { position: absolute; bottom: 0; left: 0; width: 100%; background-color: rgba(0, 0, 0, 0.9); padding: 15px; text-align: center; font-size: 1.2em; color: #50fa7b; border-top: 1px solid #50fa7b; box-sizing: border-box; z-index: 50; display: none; }
         #global-message-area.active { display: block; }
+
+        /* --- Estilos del Klotski Interactivo --- */
+        #klotski-container { display: none; margin-top: 15px; }
+        #klotski-board {
+            position: relative;
+            width: 200px; /* 4 unidades de 50px */
+            height: 250px; /* 5 unidades de 50px */
+            background-color: #333;
+            border: 2px solid #6272a4;
+            margin: 0 auto;
+        }
+        .klotski-block {
+            position: absolute;
+            background-color: #97C2FC;
+            border: 1px solid #2B7CE9;
+            box-sizing: border-box;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #111;
+        }
+        .klotski-block.main-block {
+            background-color: #ff5555; /* Pieza principal roja */
+            border-color: #D7263D;
+        }
+        .klotski-block.dragging {
+            z-index: 200;
+            opacity: 0.7;
+            cursor: grabbing;
+        }
     </style>
 </head>
 <body>
@@ -136,11 +138,8 @@
             <h2 id="overlay-puzzle-title"></h2>
             <p id="overlay-puzzle-text"></p>
             
-            <div id="klotski-display">
-                <div class="klotski-image-container">
-                    <img id="klotski-unsolved-img" src="https://i.imgur.com/5J3L3f3.png" alt="Klotski Puzzle sin resolver">
-                    <img id="klotski-solved-img" src="https://i.stack.imgur.com/b624w.png" alt="Klotski Puzzle resuelto" style="display: none;">
-                </div>
+            <div id="klotski-container">
+                <div id="klotski-board"></div>
             </div>
 
             <div id="standard-puzzle-controls">
@@ -156,13 +155,125 @@
     </div>
 
     <script>
+        // --- MOTOR DEL JUEGO (DE auxiliaresPlantilla.js) ---
+        function crearAutomata(definicion) { return { ...definicion, estadoActual: definicion.estadoInicial }; }
+        function procesarEntrada(automata, entrada) {
+            const transicionesEstadoActual = automata.transiciones[automata.estadoActual];
+            const entradaNormalizada = entrada.toString().trim().toLowerCase();
+            if (transicionesEstadoActual && transicionesEstadoActual[entradaNormalizada]) {
+                automata.estadoActual = transicionesEstadoActual[entradaNormalizada];
+                return true;
+            }
+            return false;
+        }
+        function obtenerEstadoActual(automata) { return automata.estadoActual; }
+        function obtenerPreguntaActual(automata) { return automata.contenido[automata.estadoActual] || null; }
+        function esEstadoFinal(automata) { return automata.estadosFinales.includes(automata.estadoActual); }
+        
+        // --- MOTOR DEL JUEGO KLOTSKI (NUEVO CÓDIGO) ---
+        const klotskiEngine = {
+            unitSize: 50, // 50px por unidad
+            board: null,
+            blocks: [],
+            activeBlock: null,
+            offsetX: 0,
+            offsetY: 0,
+            init: function(containerId, layout, onSolveCallback) {
+                this.board = document.getElementById(containerId);
+                this.board.innerHTML = ''; // Limpiar tablero anterior
+                this.blocks = layout.map(blockData => this.createBlock(blockData));
+                this.onSolve = onSolveCallback;
+                this.board.addEventListener('mousemove', e => this.drag(e));
+                window.addEventListener('mouseup', e => this.endDrag(e));
+            },
+            createBlock: function(data) {
+                const block = document.createElement('div');
+                block.className = 'klotski-block';
+                block.dataset.id = data.id;
+                block.style.width = `${data.w * this.unitSize}px`;
+                block.style.height = `${data.h * this.unitSize}px`;
+                block.style.left = `${data.x * this.unitSize}px`;
+                block.style.top = `${data.y * this.unitSize}px`;
+                if (data.id === 1) block.classList.add('main-block');
+                block.addEventListener('mousedown', e => this.startDrag(e, block));
+                this.board.appendChild(block);
+                return { id: data.id, x: data.x, y: data.y, w: data.w, h: data.h, element: block };
+            },
+            startDrag: function(e, blockElement) {
+                this.activeBlock = this.blocks.find(b => b.element === blockElement);
+                this.activeBlock.element.classList.add('dragging');
+                const rect = blockElement.getBoundingClientRect();
+                this.offsetX = e.clientX - rect.left;
+                this.offsetY = e.clientY - rect.top;
+            },
+            drag: function(e) {
+                if (!this.activeBlock) return;
+                e.preventDefault();
+                const boardRect = this.board.getBoundingClientRect();
+                let newX = e.clientX - boardRect.left - this.offsetX;
+                let newY = e.clientY - boardRect.top - this.offsetY;
+
+                // Restringir movimiento a un solo eje
+                const deltaX = Math.abs(newX - (this.activeBlock.x * this.unitSize));
+                const deltaY = Math.abs(newY - (this.activeBlock.y * this.unitSize));
+
+                if (deltaX > deltaY) newY = this.activeBlock.y * this.unitSize;
+                else newX = this.activeBlock.x * this.unitSize;
+
+                // Limitar al tablero
+                newX = Math.max(0, Math.min(newX, this.board.clientWidth - this.activeBlock.element.clientWidth));
+                newY = Math.max(0, Math.min(newY, this.board.clientHeight - this.activeBlock.element.clientHeight));
+                
+                this.activeBlock.element.style.left = `${newX}px`;
+                this.activeBlock.element.style.top = `${newY}px`;
+            },
+            endDrag: function(e) {
+                if (!this.activeBlock) return;
+                const oldGridX = this.activeBlock.x;
+                const oldGridY = this.activeBlock.y;
+                let newGridX = Math.round(this.activeBlock.element.offsetLeft / this.unitSize);
+                let newGridY = Math.round(this.activeBlock.element.offsetTop / this.unitSize);
+
+                // Validar colisión
+                let collision = false;
+                for (const block of this.blocks) {
+                    if (block === this.activeBlock) continue;
+                    if (newGridX < block.x + block.w && newGridX + this.activeBlock.w > block.x &&
+                        newGridY < block.y + block.h && newGridY + this.activeBlock.h > block.y) {
+                        collision = true;
+                        break;
+                    }
+                }
+                
+                if (collision) {
+                    this.activeBlock.element.style.left = `${oldGridX * this.unitSize}px`;
+                    this.activeBlock.element.style.top = `${oldGridY * this.unitSize}px`;
+                } else {
+                    this.activeBlock.x = newGridX;
+                    this.activeBlock.y = newGridY;
+                    this.activeBlock.element.style.left = `${newGridX * this.unitSize}px`;
+                    this.activeBlock.element.style.top = `${newGridY * this.unitSize}px`;
+                }
+                
+                this.activeBlock.element.classList.remove('dragging');
+                this.activeBlock = null;
+                this.checkWin();
+            },
+            checkWin: function() {
+                const mainBlock = this.blocks.find(b => b.id === 1);
+                // Condición de victoria: bloque principal en x=1, y=3
+                if (mainBlock.x === 1 && mainBlock.y === 3) {
+                    this.onSolve();
+                }
+            }
+        };
+
+        // --- LÓGICA DEL JUEGO ESCAPE ROOM ---
         document.addEventListener('DOMContentLoaded', () => {
             const puzzleOverlay = document.getElementById('puzzle-overlay');
             const overlayPuzzleTitle = document.getElementById('overlay-puzzle-title');
             const overlayPuzzleText = document.getElementById('overlay-puzzle-text');
-            const klotskiDisplay = document.getElementById('klotski-display');
-            const klotskiUnsolvedImg = document.getElementById('klotski-unsolved-img');
-            const klotskiSolvedImg = document.getElementById('klotski-solved-img');
+            const klotskiContainer = document.getElementById('klotski-container');
             const standardPuzzleControls = document.getElementById('standard-puzzle-controls');
             const overlayUserInput = document.getElementById('overlay-user-input');
             const overlaySubmitButton = document.getElementById('overlay-submit-button');
@@ -170,118 +281,87 @@
             const closePuzzleButton = document.getElementById('close-puzzle-button');
             const globalMessageArea = document.getElementById('global-message-area');
             const allHotspots = document.querySelectorAll('.hotspot-button');
-
-            const gameDFA = {
-                currentState: 'q0',
-                transitions: {
-                    'q0': { '4': 'q1' },
-                    'q1': { '15': 'q2' },
-                    'q2': { '7': 'q3' },
-                    'q3': { '8': 'q4' }, // Respuesta para la nueva pregunta
-                    'q4': { 'resuelto': 'q5' },
-                    'q5': { '5310': 'q6' }
-                },
-                finalState: 'q6'
-            };
-
-            const puzzleContent = {
-                'q0': {
-                    title: "Puzle 1: Observación",
-                    text: "¿Cuántas sillas ves en total?",
-                    hotspotId: 'hotspot-q0'
-                },
-                'q1': {
-                    title: "Puzle 2: Secuencia Numérica",
-                    text: "En la pizarra hay una secuencia numérica incompleta: 1, 3, 6, 10, ? ¿Cuál es el siguiente número?",
-                    hotspotId: 'hotspot-q1'
-                },
-                'q2': {
-                    title: "Puzle 3: Geografía",
-                    text: "Hay un globo terráqueo en una caja. ¿Cuántos continentes son?",
-                    hotspotId: 'hotspot-q2'
-                },
-                'q3': {
-                    // PREGUNTA NUEVA CON RESPUESTA '8'
-                    title: "Puzle 4: Zoología",
-                    text: "En un libro de la estantería hay un dibujo de un arácnido. ¿Cuántas patas tiene una araña?",
-                    hotspotId: 'hotspot-q3'
-                },
-                'q4': {
-                    title: "Puzle 5: El Klotski",
-                    text: "La cerradura de la puerta es un complejo mecanismo de bloques. Resuélvelo para obtener la clave final. Escribe 'resuelto' cuando lo hayas imaginado.",
-                    isKlotski: true,
-                    hotspotId: 'hotspot-q4'
-                },
-                'q5': {
-                    title: "Puzle Final: Código de Escape",
-                    text: "Al resolver el Klotski, se revela un código: 5310. ¡Introdúcelo para escapar!",
-                    hotspotId: 'hotspot-q4'
-                },
-                'q6': {
-                    title: "¡HAS ESCAPADO!",
-                    text: "🎉 ¡Felicidades! La puerta se abre. ¡Has escapado! 🎉"
-                }
-            };
             
+            const definicionAutomata = {
+                estados: ['q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6'],
+                estadoInicial: 'q0',
+                estadosFinales: ['q6'],
+                transiciones: {
+                    'q0': { '4': 'q1' }, 'q1': { '15': 'q2' }, 'q2': { '7': 'q3' },
+                    'q3': { '8': 'q4' }, 'q4': { 'resuelto': 'q5' }, 'q5': { '5310': 'q6' }
+                },
+                contenido: {
+                    'q0': { title: "Puzle 1: Observación", text: "Estás en una habitación... Para empezar, ¿Cuántas sillas hay?", hotspotId: 'hotspot-q0' },
+                    'q1': { title: "Puzle 2: Secuencia", text: "¡Correcto! En la pizarra hay una secuencia: 1, 3, 6, 10, ... ¿Cuál es el siguiente?", hotspotId: 'hotspot-q1' },
+                    'q2': { title: "Puzle 3: Adivinanza", text: "¡Excelente! Una nota dice: 'Blanco por dentro, verde por fuera...' ¿Cuántas letras tiene la respuesta?", hotspotId: 'hotspot-q2' },
+                    'q3': { title: "Puzle 4: Sistema Solar", text: "¡Asombroso! En un libro... ¿Cuántos planetas hay en el sistema solar?", hotspotId: 'hotspot-q3' },
+                    'q4': { title: "Puzle 5: El Klotski", text: "La cerradura de la puerta es un puzle Klotski. Mueve el bloque rojo a la salida inferior.", isKlotski: true, hotspotId: 'hotspot-q4' },
+                    'q5': { title: "Puzle Final: Código de Escape", text: "Al resolver el Klotski, se revela un código: 5310. ¡Introdúcelo!", hotspotId: 'hotspot-q4' },
+                    'q6': { title: "¡HAS ESCAPADO!", text: "🎉 ¡Felicidades! La puerta se abre. ¡Has escapado! 🎉" }
+                },
+                klotskiLayout: [ // Datos de tu Klotski.json
+                    {"id": 1, "x": 1, "y": 0, "w": 2, "h": 2},
+                    {"id": 2, "x": 0, "y": 0, "w": 1, "h": 2},
+                    {"id": 3, "x": 3, "y": 0, "w": 1, "h": 2},
+                    {"id": 4, "x": 0, "y": 2, "w": 1, "h": 2},
+                    {"id": 5, "x": 3, "y": 2, "w": 1, "h": 2},
+                    {"id": 6, "x": 1, "y": 2, "w": 2, "h": 1},
+                    {"id": 7, "x": 1, "y": 3, "w": 1, "h": 1},
+                    {"id": 8, "x": 2, "y": 3, "w": 1, "h": 1}
+                ]
+            };
+
+            const miJuego = crearAutomata(definicionAutomata);
+
             function updateHotspots() {
+                const contenido = obtenerPreguntaActual(miJuego);
                 allHotspots.forEach(hotspot => {
                     hotspot.disabled = true;
                     hotspot.style.opacity = '0.2';
-                    hotspot.style.cursor = 'not-allowed';
                 });
-                if (gameDFA.currentState in puzzleContent) {
-                    const activeHotspot = document.getElementById(puzzleContent[gameDFA.currentState].hotspotId);
+                if (contenido && contenido.hotspotId) {
+                    const activeHotspot = document.getElementById(contenido.hotspotId);
                     if (activeHotspot) {
                         activeHotspot.disabled = false;
                         activeHotspot.style.opacity = '1';
-                        activeHotspot.style.cursor = 'pointer';
                     }
                 }
             }
 
             function showPuzzleOverlay() {
-                const content = puzzleContent[gameDFA.currentState];
+                const content = obtenerPreguntaActual(miJuego);
                 if (!content) return;
                 overlayPuzzleTitle.innerText = content.title;
                 overlayPuzzleText.innerText = content.text;
-                overlayUserInput.value = ''; // Limpia el input anterior
-                puzzleFeedback.innerText = ''; // Limpia el feedback anterior
+                overlayUserInput.value = '';
+                puzzleFeedback.innerText = '';
+                
+                klotskiContainer.style.display = 'none';
+                standardPuzzleControls.style.display = 'none';
 
-                klotskiDisplay.style.display = content.isKlotski ? 'block' : 'none';
                 if (content.isKlotski) {
-                    klotskiUnsolvedImg.style.display = 'block';
-                    klotskiSolvedImg.style.display = 'none';
+                    klotskiContainer.style.display = 'block';
+                    klotskiEngine.init('klotski-board', miJuego.klotskiLayout, () => {
+                        // Esta función se llama al ganar
+                        handleAnswerSubmission('resuelto');
+                    });
+                } else {
+                    standardPuzzleControls.style.display = 'block';
+                    overlayUserInput.focus();
                 }
                 
                 puzzleOverlay.style.display = 'block';
-                overlayUserInput.focus();
             }
-            
-            function processAnswer(answer) {
-                // CORRECCIÓN: Normaliza la entrada de forma consistente a string y minúsculas
-                const normalizedAnswer = answer.toString().trim().toLowerCase();
-                const possibleTransitions = gameDFA.transitions[gameDFA.currentState];
 
-                if (possibleTransitions && possibleTransitions[normalizedAnswer]) {
-                    // Si la respuesta es correcta, avanza al siguiente estado
-                    gameDFA.currentState = possibleTransitions[normalizedAnswer];
+            function handleAnswerSubmission(answer) {
+                const esCorrecto = procesarEntrada(miJuego, answer);
+                if (esCorrecto) {
                     puzzleFeedback.innerText = ">> ¡Correcto! Se ha desbloqueado algo nuevo. <<";
                     puzzleFeedback.style.color = '#50fa7b';
-
-                    // Muestra el feedback visual para el Klotski si es el caso
-                    if (gameDFA.currentState === 'q5') { // El estado DESPUÉS de resolver el klotski
-                        klotskiUnsolvedImg.style.display = 'none';
-                        klotskiSolvedImg.style.display = 'block';
-                    }
-
-                    // Cierra la ventana y actualiza el estado del juego INMEDIATAMENTE
-                    // Damos un pequeño retraso solo si es el Klotski, para ver la imagen resuelta
-                    const delay = (gameDFA.currentState === 'q5') ? 1000 : 0;
                     setTimeout(() => {
                         puzzleOverlay.style.display = 'none';
                         updateGameStatus();
-                    }, delay);
-
+                    }, 500); // Pequeño delay para ver el feedback
                 } else {
                     puzzleFeedback.innerText = ">> No parece ser la respuesta correcta. Intenta de nuevo. <<";
                     puzzleFeedback.style.color = '#ff5555';
@@ -290,8 +370,9 @@
 
             function updateGameStatus() {
                 updateHotspots();
-                if (gameDFA.currentState === gameDFA.finalState) {
-                    globalMessageArea.innerHTML = puzzleContent[gameDFA.finalState].text;
+                if (esEstadoFinal(miJuego)) {
+                    const content = obtenerPreguntaActual(miJuego);
+                    globalMessageArea.innerHTML = content.text;
                     globalMessageArea.classList.add('active');
                     allHotspots.forEach(hotspot => hotspot.disabled = true);
                 }
@@ -302,8 +383,8 @@
             });
 
             closePuzzleButton.addEventListener('click', () => puzzleOverlay.style.display = 'none');
-            overlaySubmitButton.addEventListener('click', () => processAnswer(overlayUserInput.value));
-            overlayUserInput.addEventListener('keyup', e => e.key === 'Enter' && processAnswer(overlayUserInput.value));
+            overlaySubmitButton.addEventListener('click', () => handleAnswerSubmission(overlayUserInput.value));
+            overlayUserInput.addEventListener('keyup', e => e.key === 'Enter' && handleAnswerSubmission(overlayUserInput.value));
 
             updateGameStatus();
             globalMessageArea.innerText = "Busca pistas en la habitación para escapar.";
