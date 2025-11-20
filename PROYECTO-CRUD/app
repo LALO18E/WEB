@@ -1,0 +1,325 @@
+// 1. IMPORTACIONES DE FIREBASE (Modular SDK v10+)
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+
+// 2. CONFIGURACIÓN DE FIREBASE (¡REEMPLAZA ESTAS CREDENCIALES!)
+const firebaseConfig = {
+  apiKey: "AIzaSyBK38Zm2T5DGwZ9rPCsWdSFP5fDL8GlQZo",
+  authDomain: "proyecto-crud-1811.firebaseapp.com",
+  projectId: "proyecto-crud-1811",
+  storageBucket: "proyecto-crud-1811.firebasestorage.app",
+  messagingSenderId: "837233389366",
+  appId: "1:837233389366:web:4db84da11285f25fcf0d97"
+};
+
+// 3. INICIALIZACIÓN DE SERVICIOS
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
+
+// 4. VARIABLES GLOBALES
+let productos = [];
+let productoEditando = null;
+let usuarioActual = null; 
+let modalProductoInstancia, modalLoginInstancia;
+
+// Exponer funciones globales
+window.iniciarSesion = iniciarSesion;
+window.cerrarSesion = cerrarSesion;
+window.abrirModalAgregar = abrirModalAgregar;
+window.guardarProducto = guardarProducto;
+window.editarProducto = editarProducto;
+window.eliminarProducto = eliminarProducto;
+window.toggleImagenInput = toggleImagenInput;
+window.buscarProductos = buscarProductos;
+
+// --- EVENTO PRINCIPAL DE CARGA ---
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // Inicialización de Materialize
+    const elemsModal = document.querySelectorAll('.modal');
+    M.Modal.init(elemsModal); 
+    
+    modalProductoInstancia = M.Modal.getInstance(document.getElementById('modalProducto'));
+    modalLoginInstancia = M.Modal.getInstance(document.getElementById('modalLogin'));
+    
+    const elemsSelect = document.querySelectorAll('select');
+    M.FormSelect.init(elemsSelect);
+
+    // Listener de Autenticación
+    onAuthStateChanged(auth, (user) => {
+        usuarioActual = user;
+        actualizarInterfazAdmin(); 
+        cargarProductos();         
+    });
+});
+
+// --- AUTENTICACIÓN (LOGIN) ---
+
+async function iniciarSesion() {
+    const usuario = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    
+    if (!usuario || !pass) {
+        return M.toast({html: 'Faltan datos', classes: 'orange'});
+    }
+
+    // El sistema agrega @tienda.com automáticamente
+    const emailFalso = usuario + "@tienda.com"; 
+    
+    try {
+        mostrarLoading(true, "Verificando credenciales...");
+        await signInWithEmailAndPassword(auth, emailFalso, pass);
+        
+        modalLoginInstancia.close();
+        M.toast({html: '¡Acceso Concedido!', classes: 'green rounded'});
+        
+        document.getElementById('loginUser').value = ''; 
+        document.getElementById('loginPass').value = ''; 
+        
+    } catch (error) {
+        console.error('Error de login:', error);
+        M.toast({html: '❌ Error de acceso. Revisa usuario y contraseña.', classes: 'red rounded'});
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+async function cerrarSesion() {
+    await signOut(auth);
+    M.toast({html: 'Sesión cerrada', classes: 'blue'});
+}
+
+function actualizarInterfazAdmin() {
+    const btnLogin = document.getElementById('btnLoginLi');
+    const btnAdd = document.getElementById('btnAddLi');
+    const btnLogout = document.getElementById('btnLogoutLi');
+    const adminPanel = document.getElementById('adminPanelContainer');
+
+    if (usuarioActual) {
+        // MODO ADMIN
+        btnLogin.style.display = 'none';
+        btnAdd.style.display = 'block';
+        btnLogout.style.display = 'block';
+        adminPanel.style.display = 'block'; 
+    } else {
+        // MODO CLIENTE
+        btnLogin.style.display = 'block';
+        btnAdd.style.display = 'none';
+        btnLogout.style.display = 'none';
+        adminPanel.style.display = 'none'; 
+    }
+    
+    renderizarProductos(); 
+}
+
+// --- MANEJO DE IMÁGENES (STORAGE) ---
+
+function toggleImagenInput() {
+    const tipo = document.querySelector('input[name="tipoImagen"]:checked').value;
+    document.getElementById('inputUrlContainer').style.display = tipo === 'url' ? 'block' : 'none';
+    document.getElementById('inputFileContainer').style.display = tipo === 'file' ? 'block' : 'none';
+    
+    if (tipo === 'url') {
+        document.getElementById('imgFile').value = ''; 
+        const filePath = document.querySelector('#inputFileContainer .file-path');
+        if (filePath) filePath.value = '';
+    } else {
+        document.getElementById('imgUrl').value = '';
+    }
+}
+
+async function subirImagenStorage(archivo) {
+    const storageRef = ref(storage, `imagenes/${Date.now()}_${archivo.name}`);
+    await uploadBytes(storageRef, archivo);
+    const url = await getDownloadURL(storageRef);
+    return url;
+}
+
+// --- CRUD (Consultar y Renderizar) ---
+
+function cargarProductos() {
+    const q = query(collection(db, 'productos'), orderBy('nombre'));
+    onSnapshot(q, (snapshot) => {
+        productos = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        renderizarProductos();
+    }, (error) => {
+        console.error('Error cargando productos:', error);
+        M.toast({html: '❌ Error al cargar productos', classes: 'red'});
+    });
+}
+
+function renderizarProductos(productosFiltrados = productos) {
+    const contenedor = document.getElementById('listaProductos');
+    
+    if (productosFiltrados.length === 0) {
+        contenedor.innerHTML = '<div class="col s12 center-align"><p class="flow-text grey-text">No hay productos disponibles.</p></div>';
+        return;
+    }
+
+    contenedor.innerHTML = productosFiltrados.map(p => `
+        <div class="col s12 m6 l4">
+            <div class="card hoverable">
+                <div class="card-image">
+                    <img src="${p.imagen || 'https://via.placeholder.com/400x200?text=Sin+Imagen'}" alt="Foto de ${p.nombre}">
+                    
+                    <div class="admin-actions" style="display: ${usuarioActual ? 'flex' : 'none'}">
+                        <a class="btn-floating blue tooltipped" data-position="top" data-tooltip="Editar" onclick="editarProducto('${p.id}')">
+                            <i class="material-icons">edit</i>
+                        </a>
+                        <a class="btn-floating red tooltipped" data-position="top" data-tooltip="Eliminar" onclick="eliminarProducto('${p.id}')">
+                            <i class="material-icons">delete</i>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <span class="card-title truncate grey-text text-darken-4">
+                        ${p.nombre}
+                    </span>
+                    <p>${p.descripcion ? (p.descripcion.substring(0, 80) + (p.descripcion.length > 80 ? '...' : '')) : 'Sin descripción'}</p>
+                    <div style="margin-top: 15px;">
+                        <span class="chip blue lighten-4 blue-text text-darken-4">
+                            <i class="material-icons tiny">category</i> ${p.categoria || 'Sin categoría'}
+                        </span>
+                        <span class="chip green accent-1 green-text text-darken-4">
+                            <i class="material-icons tiny">attach_money</i> $${Number(p.precio).toFixed(2)}
+                        </span>
+                        <span class="chip ${p.stock > 10 ? 'teal' : p.stock > 0 ? 'orange' : 'red'} lighten-4 ${p.stock > 10 ? 'teal' : p.stock > 0 ? 'orange' : 'red'}-text text-darken-4 stock-badge">
+                            <i class="material-icons tiny">inventory</i> Stock: ${p.stock || 0}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    M.Tooltip.init(document.querySelectorAll('.tooltipped'));
+}
+
+// --- BÚSQUEDA ---
+function buscarProductos() {
+    const texto = document.getElementById('busqueda').value.toLowerCase();
+    const filtrados = productos.filter(p => 
+        (p.nombre || '').toLowerCase().includes(texto) || 
+        (p.descripcion || '').toLowerCase().includes(texto) ||
+        (p.categoria || '').toLowerCase().includes(texto)
+    );
+    renderizarProductos(filtrados);
+}
+
+// --- CRUD (Crear/Actualizar/Eliminar) ---
+
+function abrirModalAgregar() {
+    productoEditando = null;
+    document.getElementById('formProducto').reset();
+    document.getElementById('modalTitulo').innerText = "Agregar Nuevo Producto";
+    
+    document.querySelector('input[value="url"]').checked = true;
+    toggleImagenInput();
+    
+    M.updateTextFields();
+    M.FormSelect.init(document.querySelectorAll('select'));
+    
+    modalProductoInstancia.open();
+}
+
+async function guardarProducto() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const precio = document.getElementById('precio').value;
+    const categoria = document.getElementById('categoria').value;
+    const descripcion = document.getElementById('descripcion').value.trim();
+    const stock = document.getElementById('stock').value;
+    
+    if(!nombre || !precio || !categoria || !descripcion || !stock) {
+        return M.toast({html:'❌ Completa todos los campos obligatorios', classes:'orange'});
+    }
+
+    mostrarLoading(true, "Procesando producto...");
+
+    try {
+        let urlImagenFinal = "";
+        const tipoImagen = document.querySelector('input[name="tipoImagen"]:checked').value;
+
+        if (tipoImagen === 'file') {
+            const archivoInput = document.getElementById('imgFile').files[0];
+            if (archivoInput) {
+                mostrarLoading(true, "Subiendo imagen al Storage...");
+                urlImagenFinal = await subirImagenStorage(archivoInput);
+            }
+        } else {
+            urlImagenFinal = document.getElementById('imgUrl').value.trim();
+        }
+        
+        const imagenAnterior = productoEditando ? productos.find(p => p.id === productoEditando)?.imagen : '';
+
+        const data = {
+            nombre, 
+            precio: Number(precio), 
+            categoria, 
+            descripcion,
+            stock: Number(stock),
+            imagen: urlImagenFinal || imagenAnterior || ''
+        };
+
+        if (productoEditando) {
+            await updateDoc(doc(db, 'productos', productoEditando), data);
+            M.toast({html: '✓ Producto actualizado', classes: 'green'});
+        } else {
+            await addDoc(collection(db, 'productos'), data);
+            M.toast({html: '✓ Producto creado', classes: 'green'});
+        }
+        
+        modalProductoInstancia.close();
+        document.getElementById('formProducto').reset();
+    } catch (e) {
+        console.error("Error al guardar:", e);
+        M.toast({html: '❌ Error al guardar: ' + e.message, classes: 'red'});
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+function editarProducto(id) {
+    productoEditando = id;
+    const p = productos.find(item => item.id === id);
+    
+    document.getElementById('nombre').value = p.nombre || '';
+    document.getElementById('precio').value = p.precio || '';
+    document.getElementById('descripcion').value = p.descripcion || '';
+    document.getElementById('categoria').value = p.categoria || '';
+    document.getElementById('stock').value = p.stock || 0;
+    document.getElementById('imgUrl').value = p.imagen || '';
+    
+    document.querySelector('input[value="url"]').checked = true;
+    toggleImagenInput(); 
+    
+    M.updateTextFields();
+    M.FormSelect.init(document.querySelectorAll('select'));
+    document.getElementById('modalTitulo').innerText = "Editar Producto";
+    modalProductoInstancia.open();
+}
+
+async function eliminarProducto(id) {
+    if(confirm("¿Estás seguro de que deseas eliminar este producto?")) {
+        mostrarLoading(true, "Eliminando...");
+        try {
+            await deleteDoc(doc(db, 'productos', id));
+            M.toast({html: '✓ Producto eliminado', classes: 'red'});
+        } catch(e) {
+            console.error(e);
+            M.toast({html: '❌ Error al eliminar', classes: 'red'});
+        } finally {
+            mostrarLoading(false);
+        }
+    }
+}
+
+// --- FUNCIONES AUXILIARES ---
+
+function mostrarLoading(show, texto = "Cargando...") {
+    document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    document.getElementById('loadingText').innerText = texto;
+}

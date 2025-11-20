@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Tienda CRUD - Firebase</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+            min-height: 100vh; 
+        }
+        .card { border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }
+        .brand-logo { display: flex; align-items: center; font-size: 1.5rem; font-weight: 500; }
+        .header-card { background: linear-gradient(135deg, #424e62 0%, #616e87 100%); color: white; padding: 20px 30px; border-radius: 12px 12px 0 0; }
+        .card-image { height: 200px; background-color: #f1f1f1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+        .card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .card:hover .card-image img { transform: scale(1.05); }
+        .admin-actions { position: absolute; top: 10px; right: 10px; display: none; gap: 5px; z-index: 10; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        #modalLogin { border-radius: 15px; }
+        #adminPanelContainer { display: none; }
+        .stock-badge { display: inline-flex; align-items: center; gap: 5px; }
+        .password-toggle { cursor: pointer; }
+        .image-examples { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .image-examples h6 { margin-bottom: 10px; color: #1976d2; }
+        .example-url { font-size: 0.85rem; background: white; padding: 8px; margin: 5px 0; border-radius: 4px; border-left: 3px solid #2196f3; cursor: pointer; word-break: break-all; }
+        .example-url:hover { background: #f5f5f5; }
+    </style>
+</head>
+<body>
+
+    <nav class="white">
+        <div class="nav-wrapper container">
+            <a href="#" class="brand-logo black-text left">
+                <i class="material-icons left">store</i>Mi Tienda CRUD
+            </a>
+            <ul class="right">
+                <li id="btnLoginLi"><a class="btn blue darken-2 modal-trigger" href="#modalLogin">Admin Login</a></li>
+                <li id="btnAddLi" style="display: none;">
+                    <a class="btn green accent-4" onclick="abrirModalAgregar()">
+                        <i class="material-icons left">add</i>Nuevo
+                    </a>
+                </li>
+                <li id="btnLogoutLi" style="display: none;">
+                    <a class="btn grey darken-3" onclick="cerrarSesion()">
+                        <i class="material-icons left">logout</i>Salir
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="preloader-wrapper big active">
+            <div class="spinner-layer spinner-blue-only">
+                <div class="circle-clipper left"><div class="circle"></div></div>
+                <div class="gap-patch"><div class="circle"></div></div>
+                <div class="circle-clipper right"><div class="circle"></div></div>
+            </div>
+        </div>
+        <h5 id="loadingText" class="grey-text text-darken-2" style="margin-top: 20px;">Cargando...</h5>
+    </div>
+    
+    <div id="adminPanelContainer" class="container" style="display: none; margin-top: 30px;">
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="header-card">
+                <h4><i class="material-icons" style="vertical-align: middle;">dashboard</i> Panel de Control</h4>
+                <p>Administra tu inventario de productos</p>
+            </div>
+            <div class="card-content">
+                <button class="btn waves-effect waves-light purple darken-2 btn-large" onclick="abrirModalAgregar()">
+                    <i class="material-icons left">add_circle</i> Agregar Nuevo Producto
+                </button>
+                <div class="input-field" style="margin-top: 30px;">
+                    <i class="material-icons prefix">search</i>
+                    <input type="text" id="busqueda" onkeyup="buscarProductos()">
+                    <label for="busqueda">Buscar productos...</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="clientViewContainer" style="margin-top: 30px;">
+        <div id="listaProductos" class="row"></div>
+    </div>
+
+    <!-- Modal Login -->
+    <div id="modalLogin" class="modal" style="max-width: 400px;">
+        <div class="modal-content center-align">
+            <h4 class="blue-text text-darken-2">Acceso Administrativo</h4>
+            
+            <div class="input-field" style="margin-top: 30px;">
+                <i class="material-icons prefix">person</i>
+                <input type="text" id="loginUser" placeholder="admin"> 
+                <label for="loginUser">Nombre de Usuario</label>
+                <span class="helper-text">Sin @tienda.com</span>
+            </div>
+            
+            <div class="input-field" style="position: relative;">
+                <i class="material-icons prefix">lock</i>
+                <input type="password" id="loginPass">
+                <label for="loginPass">Contraseña</label>
+                <i class="material-icons password-toggle" onclick="togglePassword()" id="toggleIcon" style="position: absolute; right: 10px; top: 15px; cursor: pointer;">visibility</i>
+            </div>
+
+            <div id="loginError" style="display: none; padding: 10px; background: #ffebee; border-radius: 5px; margin-top: 15px;">
+                <p class="red-text" id="loginErrorText"></p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="waves-effect waves-green btn blue darken-2" style="width: 100%;" onclick="iniciarSesion()">
+                <i class="material-icons left">vpn_key</i>Entrar
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal Producto -->
+    <div id="modalProducto" class="modal modal-fixed-footer" style="max-width: 700px;">
+        <div class="modal-content">
+            <h4 id="modalTitulo">Gestión de Producto</h4>
+            <form id="formProducto">
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">label</i>
+                        <input type="text" id="nombre" required>
+                        <label for="nombre">Nombre *</label>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">attach_money</i>
+                        <input type="number" id="precio" required min="0" step="0.01">
+                        <label for="precio">Precio ($) *</label>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">category</i>
+                        <select id="categoria" required>
+                            <option value="" disabled selected>Elige una categoría</option>
+                            <option value="Tecnología">Tecnología</option>
+                            <option value="Electrónica">Electrónica</option>
+                            <option value="Ropa">Ropa</option>
+                            <option value="Hogar">Hogar</option>
+                            <option value="Deportes">Deportes</option>
+                            <option value="Alimentos">Alimentos</option>
+                        </select>
+                        <label>Categoría *</label>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">inventory</i>
+                        <input type="number" id="stock" required min="0">
+                        <label for="stock">Stock *</label>
+                    </div>
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">description</i>
+                        <textarea id="descripcion" class="materialize-textarea" required></textarea>
+                        <label for="descripcion">Descripción *</label>
+                    </div>
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">image</i>
+                        <input type="text" id="imgUrl" placeholder="https://ejemplo.com/imagen.jpg">
+                        <label for="imgUrl">URL de Imagen</label>
+                    </div>
+                </div>
+
+                <!-- Ejemplos de URLs -->
+                <div class="image-examples">
+                    <h6><i class="material-icons tiny">info</i> URLs de Ejemplo - Haz clic para copiar:</h6>
+                    
+                    <div class="example-url" onclick="copiarUrl(this)" data-url="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500">
+                        🎧 Auriculares: https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500
+                    </div>
+                    
+                    <div class="example-url" onclick="copiarUrl(this)" data-url="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500">
+                        ⌚ Reloj: https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500
+                    </div>
+                    
+                    <div class="example-url" onclick="copiarUrl(this)" data-url="https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500">
+                        👕 Camiseta: https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500
+                    </div>
+                    
+                    <div class="example-url" onclick="copiarUrl(this)" data-url="https://images.unsplash.com/photo-1484788984921-03950022c9ef?w=500">
+                        💻 Laptop: https://images.unsplash.com/photo-1484788984921-03950022c9ef?w=500
+                    </div>
+                    
+                    <div class="example-url" onclick="copiarUrl(this)" data-url="https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=500">
+                        📱 Smartphone: https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=500
+                    </div>
+                    
+                    <div class="example-url" onclick="copiarUrl(this)" data-url="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500">
+                        👟 Zapatillas: https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500
+                    </div>
+                    
+                    <div class="example-url" onclick="copiarUrl(this)" data-url="https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500">
+                        🏠 Decoración: https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500
+                    </div>
+                    
+                    <div class="example-url" onclick="copiarUrl(this)" data-url="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500">
+                        📷 Cámara: https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500
+                    </div>
+                    
+                    <p style="margin-top: 10px; font-size: 0.85rem; color: #666;">
+                        <i class="material-icons tiny">lightbulb_outline</i> 
+                        Tip: Busca más imágenes gratis en <a href="https://unsplash.com" target="_blank">Unsplash</a> o <a href="https://pixabay.com" target="_blank">Pixabay</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close btn-flat">Cancelar</a>
+            <a href="#!" class="btn green" onclick="guardarProducto()">
+                <i class="material-icons left">save</i>Guardar
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // ⚠️ REEMPLAZA CON TUS CREDENCIALES DE FIREBASE
+  const firebaseConfig = {
+  apiKey: "AIzaSyBK38Zm2T5DGwZ9rPCsWdSFP5fDL8GlQZo",
+  authDomain: "proyecto-crud-1811.firebaseapp.com",
+  projectId: "proyecto-crud-1811",
+  storageBucket: "proyecto-crud-1811.firebasestorage.app",
+  messagingSenderId: "837233389366",
+  appId: "1:837233389366:web:4db84da11285f25fcf0d97"
+};
+
+        let app, db, auth;
+        let productos = [];
+        let productoEditando = null;
+        let usuarioActual = null; 
+        let modalProductoInstancia, modalLoginInstancia;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            console.log('✅ Firebase inicializado');
+        } catch (error) {
+            console.error('❌ Error Firebase:', error);
+            M.toast({html: '❌ Error de configuración de Firebase', classes: 'red'});
+        }
+
+        // Función para copiar URL al campo
+        window.copiarUrl = function(elemento) {
+            const url = elemento.getAttribute('data-url');
+            document.getElementById('imgUrl').value = url;
+            M.updateTextFields();
+            M.toast({html: '✓ URL copiada al campo', classes: 'green', displayLength: 2000});
+        };
+
+        window.togglePassword = function() {
+            const passInput = document.getElementById('loginPass');
+            const icon = document.getElementById('toggleIcon');
+            
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                passInput.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        };
+
+        window.iniciarSesion = iniciarSesion;
+        window.cerrarSesion = cerrarSesion;
+        window.abrirModalAgregar = abrirModalAgregar;
+        window.guardarProducto = guardarProducto;
+        window.editarProducto = editarProducto;
+        window.eliminarProducto = eliminarProducto;
+        window.buscarProductos = buscarProductos;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const elemsModal = document.querySelectorAll('.modal');
+                M.Modal.init(elemsModal); 
+                
+                modalProductoInstancia = M.Modal.getInstance(document.getElementById('modalProducto'));
+                modalLoginInstancia = M.Modal.getInstance(document.getElementById('modalLogin'));
+                
+                const elemsSelect = document.querySelectorAll('select');
+                M.FormSelect.init(elemsSelect);
+
+                onAuthStateChanged(auth, (user) => {
+                    usuarioActual = user;
+                    actualizarInterfazAdmin(); 
+                    cargarProductos();         
+                });
+
+                console.log('✅ App lista');
+            } catch (error) {
+                console.error('❌ Error:', error);
+            }
+        });
+
+        function mostrarErrorLogin(mensaje) {
+            const errorDiv = document.getElementById('loginError');
+            const errorText = document.getElementById('loginErrorText');
+            errorText.textContent = mensaje;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
+        }
+
+        async function iniciarSesion() {
+            const usuario = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            
+            if (!usuario || !pass) {
+                mostrarErrorLogin('Completa todos los campos');
+                return;
+            }
+
+            const email = usuario.includes('@') ? usuario : usuario + "@tienda.com";
+            
+            try {
+                mostrarLoading(true, "Verificando...");
+                await signInWithEmailAndPassword(auth, email, pass);
+                
+                modalLoginInstancia.close();
+                M.toast({html: '¡Bienvenido! 🎉', classes: 'green rounded'});
+                
+                document.getElementById('loginUser').value = ''; 
+                document.getElementById('loginPass').value = ''; 
+                document.getElementById('loginError').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error login:', error.code);
+                
+                let mensaje = '';
+                switch(error.code) {
+                    case 'auth/invalid-credential':
+                    case 'auth/wrong-password':
+                    case 'auth/user-not-found':
+                        mensaje = '❌ Usuario o contraseña incorrectos';
+                        break;
+                    case 'auth/invalid-email':
+                        mensaje = '❌ Email inválido';
+                        break;
+                    case 'auth/too-many-requests':
+                        mensaje = '❌ Demasiados intentos';
+                        break;
+                    default:
+                        mensaje = '❌ Error: ' + error.message;
+                }
+                
+                mostrarErrorLogin(mensaje);
+                M.toast({html: mensaje, classes: 'red rounded', displayLength: 4000});
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        async function cerrarSesion() {
+            await signOut(auth);
+            M.toast({html: 'Sesión cerrada', classes: 'blue'});
+        }
+
+        function actualizarInterfazAdmin() {
+            const btnLogin = document.getElementById('btnLoginLi');
+            const btnAdd = document.getElementById('btnAddLi');
+            const btnLogout = document.getElementById('btnLogoutLi');
+            const adminPanel = document.getElementById('adminPanelContainer');
+
+            if (usuarioActual) {
+                btnLogin.style.display = 'none';
+                btnAdd.style.display = 'block';
+                btnLogout.style.display = 'block';
+                adminPanel.style.display = 'block'; 
+            } else {
+                btnLogin.style.display = 'block';
+                btnAdd.style.display = 'none';
+                btnLogout.style.display = 'none';
+                adminPanel.style.display = 'none'; 
+            }
+            renderizarProductos(); 
+        }
+
+        function cargarProductos() {
+            try {
+                const q = query(collection(db, 'productos'), orderBy('nombre'));
+                onSnapshot(q, (snapshot) => {
+                    productos = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    renderizarProductos();
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderizarProductos(productosFiltrados = productos) {
+            const contenedor = document.getElementById('listaProductos');
+            
+            if (productosFiltrados.length === 0) {
+                contenedor.innerHTML = '<div class="col s12 center-align"><p class="flow-text grey-text">No hay productos</p></div>';
+                return;
+            }
+
+            contenedor.innerHTML = productosFiltrados.map(p => `
+                <div class="col s12 m6 l4">
+                    <div class="card hoverable">
+                        <div class="card-image">
+                            <img src="${p.imagen || 'https://via.placeholder.com/400x200?text=Sin+Imagen'}" alt="${p.nombre}">
+                            <div class="admin-actions" style="display: ${usuarioActual ? 'flex' : 'none'}">
+                                <a class="btn-floating blue" onclick="editarProducto('${p.id}')">
+                                    <i class="material-icons">edit</i>
+                                </a>
+                                <a class="btn-floating red" onclick="eliminarProducto('${p.id}')">
+                                    <i class="material-icons">delete</i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <span class="card-title">${p.nombre}</span>
+                            <p>${p.descripcion?.substring(0, 80) || 'Sin descripción'}...</p>
+                            <div style="margin-top: 15px;">
+                                <span class="chip blue lighten-4">${p.categoria}</span>
+                                <span class="chip green accent-1">$${Number(p.precio).toFixed(2)}</span>
+                                <span class="chip orange lighten-4">Stock: ${p.stock || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function buscarProductos() {
+            const texto = document.getElementById('busqueda').value.toLowerCase();
+            const filtrados = productos.filter(p => 
+                (p.nombre || '').toLowerCase().includes(texto) || 
+                (p.descripcion || '').toLowerCase().includes(texto)
+            );
+            renderizarProductos(filtrados);
+        }
+
+        function abrirModalAgregar() {
+            productoEditando = null;
+            document.getElementById('formProducto').reset();
+            document.getElementById('modalTitulo').innerText = "Agregar Producto";
+            M.updateTextFields();
+            M.FormSelect.init(document.querySelectorAll('select'));
+            modalProductoInstancia.open();
+        }
+
+        async function guardarProducto() {
+            const nombre = document.getElementById('nombre').value.trim();
+            const precio = document.getElementById('precio').value;
+            const categoria = document.getElementById('categoria').value;
+            const descripcion = document.getElementById('descripcion').value.trim();
+            const stock = document.getElementById('stock').value;
+            const imagen = document.getElementById('imgUrl').value.trim();
+            
+            if(!nombre || !precio || !categoria) {
+                return M.toast({html:'❌ Completa los campos obligatorios', classes:'orange'});
+            }
+
+            mostrarLoading(true, "Guardando...");
+
+            try {
+                const data = {
+                    nombre, 
+                    precio: Number(precio), 
+                    categoria, 
+                    descripcion: descripcion || '',
+                    stock: Number(stock) || 0,
+                    imagen: imagen || ''
+                };
+
+                if (productoEditando) {
+                    await updateDoc(doc(db, 'productos', productoEditando), data);
+                    M.toast({html: '✅ Producto actualizado', classes: 'green'});
+                } else {
+                    await addDoc(collection(db, 'productos'), data);
+                    M.toast({html: '✅ Producto creado', classes: 'green'});
+                }
+                
+                modalProductoInstancia.close();
+                document.getElementById('formProducto').reset();
+            } catch (e) {
+                console.error(e);
+                M.toast({html: '❌ Error: ' + e.message, classes: 'red'});
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        function editarProducto(id) {
+            productoEditando = id;
+            const p = productos.find(item => item.id === id);
+            
+            document.getElementById('nombre').value = p.nombre || '';
+            document.getElementById('precio').value = p.precio || '';
+            document.getElementById('descripcion').value = p.descripcion || '';
+            document.getElementById('categoria').value = p.categoria || '';
+            document.getElementById('stock').value = p.stock || 0;
+            document.getElementById('imgUrl').value = p.imagen || '';
+            
+            M.updateTextFields();
+            M.FormSelect.init(document.querySelectorAll('select'));
+            document.getElementById('modalTitulo').innerText = "Editar Producto";
+            modalProductoInstancia.open();
+        }
+
+        async function eliminarProducto(id) {
+            if(confirm("¿Eliminar este producto?")) {
+                mostrarLoading(true, "Eliminando...");
+                try {
+                    await deleteDoc(doc(db, 'productos', id));
+                    M.toast({html: '✅ Eliminado', classes: 'red'});
+                } catch(e) {
+                    M.toast({html: '❌ Error', classes: 'red'});
+                } finally {
+                    mostrarLoading(false);
+                }
+            }
+        }
+
+        function mostrarLoading(show, texto = "Cargando...") {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+            document.getElementById('loadingText').innerText = texto;
+        }
+    </script>
+
+</body>
+</html>
