@@ -11,7 +11,7 @@
     <style>
         /* Estilos Generales del Cuerpo */
         body { 
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+            background: linear-gradient(135deg, #c5edff 0%, #b8f9fc 100%); 
             min-height: 100vh; 
         }
 
@@ -23,7 +23,7 @@
         
         /* Encabezados y Navegación */
         .brand-logo { display: flex; align-items: center; font-size: 1.5rem; font-weight: 500; }
-        .header-card { background: linear-gradient(135deg, #424e62 0%, #616e87 100%); color: white; padding: 20px 30px; border-radius: 12px 12px 0 0; }
+        .header-card { background: linear-gradient(135deg, #00c086 0%, hsl(152, 82%, 63%) 100%); color: white; padding: 20px 30px; border-radius: 12px 12px 0 0; }
         
         /* Botones de Admin flotantes en la tarjeta */
         .admin-actions { position: absolute; top: 10px; right: 10px; display: none; gap: 5px; z-index: 10; }
@@ -47,13 +47,8 @@
             <ul class="right">
                 <li id="btnLoginLi"><a class="btn blue darken-2 modal-trigger" href="#modalLogin">Admin Login</a></li>
                 
-                <li id="btnAddLi" style="display: none;">
-                    <a class="btn green accent-4" onclick="abrirModalAgregar()">
-                        <i class="material-icons left">add</i>Nuevo
-                    </a>
-                </li>
                 <li id="btnLogoutLi" style="display: none;">
-                    <a class="btn grey darken-3" onclick="cerrarSesion()">
+                    <a class="btn red darken-3" onclick="cerrarSesion()">
                         <i class="material-icons left">logout</i>Salir
                     </a>
                 </li>
@@ -79,7 +74,7 @@
                 <p>Administra tu inventario de productos</p>
             </div>
             <div class="card-content">
-                <button class="btn waves-effect waves-light purple darken-2 btn-large" onclick="abrirModalAgregar()">
+                <button class="btn waves-effect waves-light purple darken-1 btn-large" onclick="abrirModalAgregar()">
                     <i class="material-icons left">add_circle</i> Agregar Nuevo Producto
                 </button>
                 <div class="input-field" style="margin-top: 30px;">
@@ -374,18 +369,20 @@
         // Controla qué botones se ven según si hay usuario logueado o no
         function actualizarInterfazAdmin() {
             const btnLogin = document.getElementById('btnLoginLi');
-            const btnAdd = document.getElementById('btnAddLi');
+            // const btnAdd = document.getElementById('btnAddLi');  <-- ELIMINAMOS ESTA REFERENCIA
             const btnLogout = document.getElementById('btnLogoutLi');
             const adminPanel = document.getElementById('adminPanelContainer');
 
             if (usuarioActual) {
+                // Usuario logueado: Ocultamos login, mostramos panel y logout
                 btnLogin.style.display = 'none';
-                btnAdd.style.display = 'block';
+                // btnAdd.style.display = 'block'; <-- ELIMINADO
                 btnLogout.style.display = 'block';
                 adminPanel.style.display = 'block'; 
             } else {
+                // Sin usuario: Mostramos login, ocultamos lo demás
                 btnLogin.style.display = 'block';
-                btnAdd.style.display = 'none';
+                // btnAdd.style.display = 'none'; <-- ELIMINADO
                 btnLogout.style.display = 'none';
                 adminPanel.style.display = 'none'; 
             }
