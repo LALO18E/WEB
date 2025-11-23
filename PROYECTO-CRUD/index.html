@@ -3,27 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tienda-CRUD - Firebase</title>
-    
+    <title>Tienda-CRUD</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
+    <link rel="stylesheet" href="css/styles.css">
     <style>
-        /* Estilos Generales del Cuerpo */
-        body { 
-            background: linear-gradient(135deg, #c5edff 0%, #b8f9fc 100%); 
+    /* FORZAR TAMAÑO PEQUEÑO EN CARRITO */
+    #listaCarrito img, .cart-item img {
+        width: 50px !important;    /* Ancho fijo */
+        height: 50px !important;   /* Alto fijo */
+        object-fit: cover !important; /* Recorta para no deformar */
+        border-radius: 4px !important;
+        margin-right: 10px !important;
+    }
+    body { 
+            background: linear-gradient(135deg, #37c7c0 0%, #5557d8 100%); 
             min-height: 100vh; 
         }
+.card { 
+    border-radius: 25px; 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); 
+    overflow: visible !important; /* IMPORTANTE: Visible para que el botón no se corte */
+    border: none;
+}
+        /* CORRECCIÓN DEL BOTÓN CORTADO */
+.card-image {
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    /* CAMBIO CLAVE: Quitamos overflow: hidden y ponemos visible */
+    overflow: visible !important; 
+    /* Mantenemos el redondeo superior en el contenedor por si acaso */
+    border-radius: 12px 12px 0 0; 
+}
 
-        /* Estilos de las Tarjetas de Producto */
-        .card { border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }
-        .card-image { height: 200px; background-color: #f1f1f1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
-        .card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+.card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* CAMBIO CLAVE: Redondeamos la imagen directamente */
+    border-radius: 12px 12px 0 0; 
+}
         .card:hover .card-image img { transform: scale(1.05); } /* Efecto Zoom al pasar mouse */
         
         /* Encabezados y Navegación */
         .brand-logo { display: flex; align-items: center; font-size: 1.5rem; font-weight: 500; }
-        .header-card { background: linear-gradient(135deg, #00c086 0%, hsl(152, 82%, 63%) 100%); color: white; padding: 20px 30px; border-radius: 12px 12px 0 0; }
+        .header-card { background: linear-gradient(135deg, #6a62cf 0%, hsl(152, 82%, 63%) 100%); color: white; padding: 20px 30px; border-radius: 12px 12px 0 0; }
         
         /* Botones de Admin flotantes en la tarjeta */
         .admin-actions { position: absolute; top: 10px; right: 10px; display: none; gap: 5px; z-index: 10; }
@@ -36,20 +63,25 @@
         #adminPanelContainer { display: none; } /* Oculto por defecto hasta hacer login */
         .password-toggle { cursor: pointer; }
     </style>
+</style>
 </head>
 <body>
 
     <nav class="white">
         <div class="nav-wrapper container">
-            <a href="#" class="brand-logo black-text left">
+            <a href="#" class="brand-logo left black-text">
                 <i class="material-icons left">store</i>Tienda-CRUD
             </a>
             <ul class="right">
-                <li id="btnLoginLi"><a class="btn blue darken-2 modal-trigger" href="#modalLogin">Admin Login</a></li>
-                
+                <li id="btnLoginLi">
+                    <a class="btn blue darken-3 waves-effect waves-light modal-trigger" href="#modalLogin">
+                        ADMIN LOGIN
+                    </a>
+                </li>
+            
                 <li id="btnLogoutLi" style="display: none;">
-                    <a class="btn red darken-3" onclick="cerrarSesion()">
-                        <i class="material-icons left">logout</i>Salir
+                    <a class="btn red darken-2 waves-effect waves-light" onclick="window.cerrarSesion()">
+                        <i class="material-icons left">exit_to_app</i>SALIR
                     </a>
                 </li>
             </ul>
@@ -64,59 +96,104 @@
                 <div class="circle-clipper right"><div class="circle"></div></div>
             </div>
         </div>
-        <h5 id="loadingText" class="grey-text text-darken-2" style="margin-top: 20px;">Cargando...</h5>
+        <h5 id="loadingText">Cargando...</h5>
     </div>
     
-    <div id="adminPanelContainer" class="container" style="display: none; margin-top: 30px;">
-        <div class="card" style="margin-bottom: 30px;">
+    <div id="adminPanelContainer" class="container " style=" margin-top: 30px;">
+        <div class="card">
             <div class="header-card">
-                <h4><i class="material-icons" style="vertical-align: middle;">dashboard</i> Panel de Control</h4>
-                <p>Administra tu inventario de productos</p>
+                <h4><i class="material-icons left">dashboard</i> Panel de Control</h4>
+                <p>Administrador del inventario de productos</p>
             </div>
+        
             <div class="card-content">
-                <button class="btn waves-effect waves-light purple darken-1 btn-large" onclick="abrirModalAgregar()">
-                    <i class="material-icons left">add_circle</i> Agregar Nuevo Producto
+                <button class="btn  orange darken-1 waves-effect waves-light btn-large" onclick="window.abrirModalAgregar()" style="width: 100%; max-width: 300px; margin-bottom: 25px;">
+                    <i class="material-icons left">add_circle</i> AGREGAR PRODUCTO
                 </button>
-                <div class="input-field" style="margin-top: 30px;">
+            
+                <div class="input-field">
                     <i class="material-icons prefix">search</i>
-                    <input type="text" id="busqueda" onkeyup="buscarProductos()">
+                    <input type="text" id="busqueda" onkeyup="window.filtrarProductos()">
                     <label for="busqueda">Buscar productos...</label>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container" id="clientViewContainer" style="margin-top: 30px;">
-        <div id="listaProductos" class="row"></div>
+    <div class="container" style="margin-top: 30px;">
+        <div class="card">
+            <div class="header-card">
+                <h4><i class="material-icons left">storefront</i> Tienda Productozzz</h4>
+                <p>Explora nuestro catálogo</p>
+            </div>
+        
+            <div class="card-content">
+                <div class="input-field" style="margin-top: 10px;">
+                    <i class="material-icons prefix">search</i>
+                    <input type="text" id="busquedaCliente" onkeyup="window.filtrarProductosCliente()">
+                    <label for="busquedaCliente">¿Qué estás buscando?</label>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="modalLogin" class="modal" style="max-width: 400px;">
-        <div class="modal-content center-align">
-            <h4 class="blue-text text-darken-2">Acceso Administrativo</h4>
-            
-            <div class="input-field" style="margin-top: 30px;">
-                <i class="material-icons prefix">person</i>
-                <input type="text" id="loginUser" placeholder="admin"> 
-                <label for="loginUser">Nombre de Usuario</label>
-                <span class="helper-text">Sin @tienda.com</span>
-            </div>
-            
-            <div class="input-field" style="position: relative;">
-                <i class="material-icons prefix">lock</i>
-                <input type="password" id="loginPass">
-                <label for="loginPass">Contraseña</label>
-                <i class="material-icons password-toggle" onclick="togglePassword()" id="toggleIcon" style="position: absolute; right: 10px; top: 15px; cursor: pointer;">visibility</i>
-            </div>
+    <div class="fixed-action-btn cart-fab" onclick="window.abrirCarrito()">
+        <a class="btn-floating btn-large orange darken-2 pulse">
+            <i class="large material-icons">shopping_cart</i>
+        </a>
+        <span class="cart-badge" id="cartCount">0</span>
+    </div>
 
-            <div id="loginError" style="display: none; padding: 10px; background: #ffebee; border-radius: 5px; margin-top: 15px;">
-                <p class="red-text" id="loginErrorText"></p>
+    <div id="modalCarrito" class="modal modal-fixed-footer">
+        <div class="modal-content">
+            <h4><i class="material-icons left">shopping_cart</i> Tu Carrito</h4>
+            <ul id="listaCarrito"></ul>
+            <div class="row right-align">
+                <h5>Total: <span class="green-text" id="cartTotal">$0.00</span></h5>
             </div>
         </div>
         <div class="modal-footer">
-            <a href="#!" class="waves-effect waves-green btn blue darken-2" style="width: 100%;" onclick="iniciarSesion()">
-                <i class="material-icons left">vpn_key</i>Entrar
+            <a href="#!" class="modal-close btn-flat">Seguir viendo</a>
+            <a href="#!" class="btn orange darken-2" onclick="window.finalizarCompra()">
+                <i class="material-icons left">whatsapp</i>Pedir
             </a>
         </div>
+    </div>
+
+    <div id="modalLogin" class="modal" style="border-radius: 15px; max-width: 380px; overflow: visible;">
+        <div class="modal-content" style="padding: 30px 24px 10px 24px;">
+            <h4 class="center-align" style="color: #1976d2; margin-top: 0; font-weight: 400;">Acceso Administrativo</h4>
+            
+            <form style="margin-top: 30px;">
+                <div class="input-field">
+                    <i class="material-icons prefix" style="color: #333;">person</i>
+                    <input type="text" id="loginUser" placeholder="admin">
+                    <label for="loginUser" class="active">Nombre de Usuario</label>
+                    <span class="helper-text center-align" style="color: #888;">Sin @tienda.com</span>
+                </div>
+
+                <div class="input-field" style="margin-top: 20px;">
+                    <i class="material-icons prefix" style="color: #333;">lock</i>
+                    <input type="password" id="loginPass" placeholder="••••••">
+                    <label for="loginPass" class="active">Contraseña</label>
+                    <i class="material-icons" id="togglePasswordBtn" onclick="togglePassword()" 
+                       style="position: absolute; right: 0; top: 10px; cursor: pointer; color: #333;">
+                       visibility_off
+                    </i>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer" style="padding: 0; height: 50px;">
+            <a onclick="window.iniciarSesion()" class="waves-effect waves-light btn-flat blue darken-2 white-text" 
+               style="width: 100%; height: 100%; border-radius: 0 0 15px 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; letter-spacing: 1px;">
+                <i class="material-icons left" style="margin-right: 10px;">vpn_key</i> ENTRAR
+            </a>
+        </div>
+    </div>
+    <div class="container" style="margin-top: 30px;">
+        <div id="listaProductos" class="row"></div>
+        <div id="btnCargarMasContainer" class="center-align" style="margin: 40px 0;"></div>
     </div>
 
     <div id="modalProducto" class="modal modal-fixed-footer" style="max-width: 700px;">
@@ -127,38 +204,37 @@
                     <div class="input-field col s12 m6">
                         <i class="material-icons prefix">label</i>
                         <input type="text" id="nombre" required>
-                        <label for="nombre">Nombre *</label>
+                        <label for="nombre">Nombre</label>
                     </div>
                     <div class="input-field col s12 m6">
                         <i class="material-icons prefix">attach_money</i>
-                        <input type="number" id="precio" required min="0" step="0.01">
-                        <label for="precio">Precio ($) *</label>
+                        <input type="number" id="precio" required step="0.01">
+                        <label for="precio">Precio ($)</label>
                     </div>
                     <div class="input-field col s12 m6">
                         <i class="material-icons prefix">category</i>
-                        <select id="categoria" required>
+                        <select id="categoria">
                             <option value="" disabled selected>Elige una categoría</option>
                             <option value="Tecnología">Tecnología</option>
-                            <option value="Electrónica">Electrónica</option>
                             <option value="Ropa">Ropa</option>
                             <option value="Hogar">Hogar</option>
                             <option value="Deportes">Deportes</option>
                         </select>
-                        <label>Categoría *</label>
+                        <label>Categoría</label>
                     </div>
                     <div class="input-field col s12 m6">
                         <i class="material-icons prefix">inventory</i>
-                        <input type="number" id="stock" required min="0">
-                        <label for="stock">Stock *</label>
+                        <input type="number" id="stock" required>
+                        <label for="stock">Stock</label>
                     </div>
                     <div class="input-field col s12">
                         <i class="material-icons prefix">description</i>
-                        <textarea id="descripcion" class="materialize-textarea" required></textarea>
-                        <label for="descripcion">Descripción *</label>
+                        <textarea id="descripcion" class="materialize-textarea"></textarea>
+                        <label for="descripcion">Descripción</label>
                     </div>
                     <div class="input-field col s12">
                         <i class="material-icons prefix">collections</i>
-                        <textarea id="imgUrls" class="materialize-textarea" placeholder="Pega una URL por línea"></textarea>
+                        <textarea id="imgUrls" class="materialize-textarea" placeholder="Pega una URL por línea para el carrusel"></textarea>
                         <label for="imgUrls">URLs de Imágenes (Una por línea)</label>
                     </div>
                 </div>
@@ -166,17 +242,16 @@
         </div>
         <div class="modal-footer">
             <a href="#!" class="modal-close btn-flat">Cancelar</a>
-            <a href="#!" class="btn green" onclick="guardarProducto()">
+            <a href="#!" class="btn green" onclick="window.guardarProducto()">
                 <i class="material-icons left">save</i>Guardar
             </a>
         </div>
     </div>
-    
     <div id="modalDetalle" class="modal modal-fixed-footer">
         <div class="modal-content">
             <div class="row">
                 <div class="col s12 m6">
-                    <div class="carousel carousel-slider center" id="carruselProducto" style="height: 300px;">
+                    <div class="carousel carousel-slider center" id="carruselProducto" style="height: 300px; border-radius: 8px;">
                         </div>
                 </div>
                 <div class="col s12 m6">
@@ -190,443 +265,13 @@
         </div>
         <div class="modal-footer">
             <a href="#!" class="modal-close btn-flat">Cerrar</a>
-            <a href="#!" class="btn blue darken-2" id="btnEditarDesdeDetalle">Editar</a>
+            <a class="btn orange darken-2" id="btnAgregarDesdeDetalle">
+                <i class="material-icons left">add_shopping_cart</i>Agregar al Carrito
+            </a>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
-    <script type="module">
-        // ==========================================
-        // 1. IMPORTACIONES DE FIREBASE
-        // ==========================================
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-
-        // ==========================================
-        // 2. CONFIGURACIÓN Y VARIABLES
-        // ==========================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyBK38Zm2T5DGwZ9rPCsWdSFP5fDL8GlQZo",
-            authDomain: "proyecto-crud-1811.firebaseapp.com",
-            projectId: "proyecto-crud-1811",
-            storageBucket: "proyecto-crud-1811.firebasestorage.app",
-            messagingSenderId: "837233389366",
-            appId: "1:837233389366:web:4db84da11285f25fcf0d97"
-        };
-
-        let app, db, auth;
-        let productos = [];         // Almacena todos los productos descargados
-        let productoEditando = null; // Guarda el ID si estamos editando, o null si es nuevo
-        let usuarioActual = null;    // Guarda el objeto usuario si hay login
-        let modalProductoInstancia, modalLoginInstancia; // Instancias de modales Materialize
-
-        // Inicialización de Firebase
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            console.log('✅ Firebase inicializado');
-        } catch (error) {
-            console.error('❌ Error Firebase:', error);
-            M.toast({html: '❌ Error de configuración de Firebase', classes: 'red'});
-        }
-
-        // ==========================================
-        // 3. HELPERS Y EXPOSICIÓN A WINDOW
-        // ==========================================
-        // Como usamos type="module", las funciones son privadas por defecto.
-        // Las asignamos a window para poder usarlas desde el HTML (onclick="...").
-
-        // Función para copiar URL (si se usara externamente)
-        window.copiarUrl = function(elemento) {
-            const url = elemento.getAttribute('data-url');
-            document.getElementById('imgUrl').value = url;
-            M.updateTextFields();
-            M.toast({html: '✓ URL copiada al campo', classes: 'green', displayLength: 2000});
-        };
-
-        // Alternar visibilidad de contraseña en login
-        window.togglePassword = function() {
-            const passInput = document.getElementById('loginPass');
-            const icon = document.getElementById('toggleIcon');
-            
-            if (passInput.type === 'password') {
-                passInput.type = 'text';
-                icon.textContent = 'visibility_off';
-            } else {
-                passInput.type = 'password';
-                icon.textContent = 'visibility';
-            }
-        };
-
-        // Asignación de funciones principales al ámbito global
-        window.iniciarSesion = iniciarSesion;
-        window.cerrarSesion = cerrarSesion;
-        window.abrirModalAgregar = abrirModalAgregar;
-        window.guardarProducto = guardarProducto;
-        window.editarProducto = editarProducto;
-        window.eliminarProducto = eliminarProducto;
-        window.buscarProductos = buscarProductos;
-        window.verDetalle = verDetalle;
-
-        // ==========================================
-        // 4. INICIALIZACIÓN AL CARGAR DOM
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', () => {
-            try {
-                // Inicializar Modales
-                const elemsModal = document.querySelectorAll('.modal');
-                M.Modal.init(elemsModal); 
-                
-                modalProductoInstancia = M.Modal.getInstance(document.getElementById('modalProducto'));
-                modalLoginInstancia = M.Modal.getInstance(document.getElementById('modalLogin'));
-                
-                // Inicializar Selects (Desplegables)
-                const elemsSelect = document.querySelectorAll('select');
-                M.FormSelect.init(elemsSelect);
-
-                // Escuchar cambios de autenticación (Login/Logout)
-                onAuthStateChanged(auth, (user) => {
-                    usuarioActual = user;
-                    actualizarInterfazAdmin(); 
-                    cargarProductos(); // Recargar productos al cambiar estado        
-                });
-
-                console.log('✅ App lista');
-            } catch (error) {
-                console.error('❌ Error:', error);
-            }
-        });
-
-        // ==========================================
-        // 5. LÓGICA DE AUTENTICACIÓN
-        // ==========================================
-
-        function mostrarErrorLogin(mensaje) {
-            const errorDiv = document.getElementById('loginError');
-            const errorText = document.getElementById('loginErrorText');
-            errorText.textContent = mensaje;
-            errorDiv.style.display = 'block';
-            setTimeout(() => errorDiv.style.display = 'none', 5000);
-        }
-
-        async function iniciarSesion() {
-            const usuario = document.getElementById('loginUser').value.trim();
-            const pass = document.getElementById('loginPass').value;
-            
-            if (!usuario || !pass) {
-                mostrarErrorLogin('Completa todos los campos');
-                return;
-            }
-
-            // Truco: Si el usuario no pone email, asumimos @tienda.com
-            const email = usuario.includes('@') ? usuario : usuario + "@tienda.com";
-            
-            try {
-                mostrarLoading(true, "Verificando...");
-                await signInWithEmailAndPassword(auth, email, pass);
-                
-                modalLoginInstancia.close();
-                M.toast({html: '¡Bienvenido! 🎉', classes: 'green rounded'});
-                
-                // Limpiar formulario
-                document.getElementById('loginUser').value = ''; 
-                document.getElementById('loginPass').value = ''; 
-                document.getElementById('loginError').style.display = 'none';
-                
-            } catch (error) {
-                console.error('Error login:', error.code);
-                let mensaje = '';
-                switch(error.code) {
-                    case 'auth/invalid-credential':
-                    case 'auth/wrong-password':
-                    case 'auth/user-not-found':
-                        mensaje = '❌ Usuario o contraseña incorrectos';
-                        break;
-                    case 'auth/invalid-email':
-                        mensaje = '❌ Email inválido';
-                        break;
-                    case 'auth/too-many-requests':
-                        mensaje = '❌ Demasiados intentos';
-                        break;
-                    default:
-                        mensaje = '❌ Error: ' + error.message;
-                }
-                mostrarErrorLogin(mensaje);
-                M.toast({html: mensaje, classes: 'red rounded', displayLength: 4000});
-            } finally {
-                mostrarLoading(false);
-            }
-        }
-
-        async function cerrarSesion() {
-            await signOut(auth);
-            M.toast({html: 'Sesión cerrada', classes: 'blue'});
-        }
-
-        // Controla qué botones se ven según si hay usuario logueado o no
-        function actualizarInterfazAdmin() {
-            const btnLogin = document.getElementById('btnLoginLi');
-            // const btnAdd = document.getElementById('btnAddLi');  <-- ELIMINAMOS ESTA REFERENCIA
-            const btnLogout = document.getElementById('btnLogoutLi');
-            const adminPanel = document.getElementById('adminPanelContainer');
-
-            if (usuarioActual) {
-                // Usuario logueado: Ocultamos login, mostramos panel y logout
-                btnLogin.style.display = 'none';
-                // btnAdd.style.display = 'block'; <-- ELIMINADO
-                btnLogout.style.display = 'block';
-                adminPanel.style.display = 'block'; 
-            } else {
-                // Sin usuario: Mostramos login, ocultamos lo demás
-                btnLogin.style.display = 'block';
-                // btnAdd.style.display = 'none'; <-- ELIMINADO
-                btnLogout.style.display = 'none';
-                adminPanel.style.display = 'none'; 
-            }
-            // Re-renderizar para mostrar/ocultar botones de editar/eliminar en las tarjetas
-            renderizarProductos(); 
-        }
-
-        // ==========================================
-        // 6. LÓGICA DE BASE DE DATOS (CRUD)
-        // ==========================================
-
-        // Carga en tiempo real (onSnapshot)
-        function cargarProductos() {
-            try {
-                const q = query(collection(db, 'productos'), orderBy('nombre'));
-                onSnapshot(q, (snapshot) => {
-                    productos = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-                    renderizarProductos();
-                });
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
-
-        // Genera el HTML de las tarjetas
-        function renderizarProductos(productosFiltrados = productos) {
-            const contenedor = document.getElementById('listaProductos');
-            
-            if (productosFiltrados.length === 0) {
-                contenedor.innerHTML = '<div class="col s12 center-align"><p class="flow-text grey-text">No hay productos</p></div>';
-                return;
-            }
-
-            contenedor.innerHTML = productosFiltrados.map(p => {
-                // LÓGICA DE IMAGEN: Prioriza array nuevo, sino campo viejo, sino placeholder
-                let imagenPrincipal = 'https://via.placeholder.com/400x200?text=Sin+Imagen';
-                if (p.imagenes && p.imagenes.length > 0) {
-                    imagenPrincipal = p.imagenes[0];
-                } else if (p.imagen) {
-                    imagenPrincipal = p.imagen;
-                }
-                
-                // HTML de la tarjeta
-                return `
-                <div class="col s12 m6 l4">
-                    <div class="card hoverable">
-                        <div class="card-image" style="cursor: pointer;" onclick="verDetalle('${p.id}')">
-                            <img src="${imagenPrincipal}" alt="${p.nombre}">
-                            <div class="admin-actions" style="display: ${usuarioActual ? 'flex' : 'none'}">
-                                <a class="btn-floating blue" onclick="event.stopPropagation(); editarProducto('${p.id}')">
-                                    <i class="material-icons">edit</i>
-                                </a>
-                                <a class="btn-floating red" onclick="event.stopPropagation(); eliminarProducto('${p.id}')">
-                                    <i class="material-icons">delete</i>
-                                </a>
-                            </div>
-                        </div>
-                        <div class="card-content">
-                            <span class="card-title activator grey-text text-darken-4" onclick="verDetalle('${p.id}')" style="cursor:pointer">${p.nombre}</span>
-                            <p>${p.descripcion?.substring(0, 80) || 'Sin descripción'}...</p>
-                            <div style="margin-top: 15px;">
-                                <span class="chip blue lighten-4">${p.categoria}</span>
-                                <span class="chip green accent-1">$${Number(p.precio).toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `}).join('');
-        }
-
-        // Filtro local por texto
-        function buscarProductos() {
-            const texto = document.getElementById('busqueda').value.toLowerCase();
-            const filtrados = productos.filter(p => 
-                (p.nombre || '').toLowerCase().includes(texto) || 
-                (p.descripcion || '').toLowerCase().includes(texto)
-            );
-            renderizarProductos(filtrados);
-        }
-
-        function abrirModalAgregar() {
-            productoEditando = null;
-            document.getElementById('formProducto').reset();
-            document.getElementById('modalTitulo').innerText = "Agregar Producto";
-            M.updateTextFields();
-            M.FormSelect.init(document.querySelectorAll('select'));
-            modalProductoInstancia.open();
-        }
-
-        // Función Dual: Crea (addDoc) o Actualiza (updateDoc)
-        async function guardarProducto() {
-            const nombre = document.getElementById('nombre').value.trim();
-            const precio = document.getElementById('precio').value;
-            const categoria = document.getElementById('categoria').value;
-            const descripcion = document.getElementById('descripcion').value.trim();
-            const stock = document.getElementById('stock').value;
-        
-            // CAPTURA DE IMÁGENES MÚLTIPLES DEL TEXTAREA
-            const imgText = document.getElementById('imgUrls').value.trim();
-            // Separa por salto de línea (\n), quita espacios y filtra líneas vacías
-            const imagenesLista = imgText ? imgText.split('\n').map(url => url.trim()).filter(url => url.length > 0) : [];
-
-            if(!nombre || !precio || !categoria) {
-                return M.toast({html:'❌ Completa los campos obligatorios', classes:'orange'});
-            }
-
-            mostrarLoading(true, "Guardando...");
-
-            try {
-                const data = {
-                    nombre, 
-                    precio: Number(precio), 
-                    categoria, 
-                    descripcion: descripcion || '',
-                    stock: Number(stock) || 0,
-                    imagenes: imagenesLista, // Array de URLs
-                    imagen: imagenesLista[0] || '' // Compatibilidad con formato viejo (guarda solo la primera)
-                };
-
-                if (productoEditando) {
-                    await updateDoc(doc(db, 'productos', productoEditando), data);
-                    M.toast({html: '✅ Producto actualizado', classes: 'green'});
-                } else {
-                    await addDoc(collection(db, 'productos'), data);
-                    M.toast({html: '✅ Producto creado', classes: 'green'});
-                }
-                modalProductoInstancia.close();
-                document.getElementById('formProducto').reset();
-            } catch (e) {
-                console.error(e);
-                M.toast({html: '❌ Error: ' + e.message, classes: 'red'});
-            } finally {
-                mostrarLoading(false);
-            }
-        }
-
-        // Prepara el modal con los datos existentes
-        function editarProducto(id) {
-            productoEditando = id;
-            const p = productos.find(item => item.id === id);
-            
-            document.getElementById('nombre').value = p.nombre || '';
-            document.getElementById('precio').value = p.precio || '';
-            document.getElementById('descripcion').value = p.descripcion || '';
-            document.getElementById('categoria').value = p.categoria || '';
-            document.getElementById('stock').value = p.stock || 0;
-            
-            // Recuperar imágenes: Si hay array usa join, si no usa la imagen simple
-            let listaUrls = "";
-            if (p.imagenes && Array.isArray(p.imagenes)) {
-                listaUrls = p.imagenes.join('\n'); 
-            } else if (p.imagen) {
-                listaUrls = p.imagen; 
-            }
-            document.getElementById('imgUrls').value = listaUrls;
-            
-            M.updateTextFields();
-            M.textareaAutoResize(document.getElementById('imgUrls')); // Ajusta altura textarea
-            M.FormSelect.init(document.querySelectorAll('select'));
-            document.getElementById('modalTitulo').innerText = "Editar Producto";
-            modalProductoInstancia.open();
-        }
-
-        async function eliminarProducto(id) {
-            if(confirm("¿Eliminar este producto?")) {
-                mostrarLoading(true, "Eliminando...");
-                try {
-                    await deleteDoc(doc(db, 'productos', id));
-                    M.toast({html: '✅ Eliminado', classes: 'red'});
-                } catch(e) {
-                    M.toast({html: '❌ Error', classes: 'red'});
-                } finally {
-                    mostrarLoading(false);
-                }
-            }
-        }
-
-        // Controla el overlay blanco de carga
-        function mostrarLoading(show, texto = "Cargando...") {
-            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-            document.getElementById('loadingText').innerText = texto;
-        }
-
-        // ==========================================
-        // 7. VISUALIZACIÓN DE DETALLE (CARRUSEL)
-        // ==========================================
-        function verDetalle(id) {
-            const p = productos.find(item => item.id === id);
-            if (!p) return;
-
-            // 1. Llenar datos de texto
-            document.getElementById('detalleNombre').innerText = p.nombre;
-            document.getElementById('detallePrecio').innerText = `$${Number(p.precio).toFixed(2)}`;
-            document.getElementById('detalleCategoria').innerText = p.categoria;
-            document.getElementById('detalleStock').innerText = `Stock: ${p.stock || 0}`;
-            document.getElementById('detalleDescripcion').innerText = p.descripcion;
-            
-            // 2. Configurar botón de editar interno (solo para admin)
-            const btnEdit = document.getElementById('btnEditarDesdeDetalle');
-            if (usuarioActual) {
-                btnEdit.style.display = 'inline-block';
-                btnEdit.onclick = () => { 
-                    M.Modal.getInstance(document.getElementById('modalDetalle')).close();
-                    editarProducto(id); 
-                };
-            } else {
-                btnEdit.style.display = 'none';
-            }
-
-            // 3. Construir Carrusel de Imágenes
-            const carruselContainer = document.getElementById('carruselProducto');
-            let htmlImagenes = '';
-            
-            // Unificamos lógica de imágenes (array o string)
-            let imagenesParaMostrar = [];
-            if (p.imagenes && p.imagenes.length > 0) {
-                imagenesParaMostrar = p.imagenes;
-            } else if (p.imagen) {
-                imagenesParaMostrar = [p.imagen];
-            } else {
-                imagenesParaMostrar = ['https://via.placeholder.com/400x200?text=Sin+Imagen'];
-            }
-
-            // Generar HTML de cada slide del carrusel
-            imagenesParaMostrar.forEach(url => {
-                htmlImagenes += `<a class="carousel-item" href="#!"><img src="${url}" style="object-fit: contain; height: 100%; width: 100%;"></a>`;
-            });
-
-            carruselContainer.innerHTML = htmlImagenes;
-
-            // 4. Abrir Modal e Iniciar Carrusel
-            const modalInstancia = M.Modal.getInstance(document.getElementById('modalDetalle'));
-            modalInstancia.open();
-            
-            // Retraso necesario: El carrusel necesita que el modal esté visible para calcular su ancho
-            setTimeout(() => {
-                const elems = document.querySelectorAll('.carousel');
-                M.Carousel.init(elems, {
-                    fullWidth: true,
-                    indicators: true
-                });
-            }, 300);
-        }
-    </script>
-
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
